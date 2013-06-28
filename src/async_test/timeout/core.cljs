@@ -1,13 +1,14 @@
 (ns async-test.timeout.core
-  (:require [cljs.core.async :refer [chan close!]]
-            [clojure.string :as string])
+  (:require [cljs.core.async :refer [chan close!]])
   (:require-macros
-    [cljs.core.async.macros :as m :refer [go alts!]]))
+    [cljs.core.async.macros :as m :refer [go]]))
  
 (defn timeout [ms]
   (let [c (chan)]
     (js/setTimeout (fn [] (close! c)) ms)
     c))
+
+(def empty [])
  
 (go
   (<! (timeout 1000))

@@ -13,13 +13,25 @@
   :cljsbuild
   {:builds
    [{:id "mouse"
-     :source-paths ["src/async/mouse"]
+     :source-paths ["src/async_test/mouse"]
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
                 :output-to "main.js"}}
     {:id "timeout"
-     :source-paths ["src/async/timeout"]
+     :source-paths ["src/async_test/timeout"]
+     :compiler {:optimizations :simple
+                :pretty-print true
+                :static-fns true
+                :output-to "main.js"}}
+    {:id "throttle"
+     :source-paths ["src/async_test/throttle"]
+     :compiler {:optimizations :simple
+                :pretty-print true
+                :static-fns true
+                :output-to "main.js"}}
+    {:id "debounce"
+     :source-paths ["src/async_test/debounce"]
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
