@@ -14,5 +14,6 @@
  
 (go
   (while true
-    (let [[loc c] (alts! [c])]
-      (aset loc-div "innerHTML" (string/join ", " loc)))))
+    (let [[loc c] (alts! [c] :default [nil nil])]
+      (when c
+        (aset loc-div "innerHTML" (string/join ", " loc))))))
