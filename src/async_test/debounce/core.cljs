@@ -15,15 +15,15 @@
 (defn debounce [c ms]
   (let [c' (chan)]
     (go
-      (loop [start nil]
-        (let [loc (<! c)]
-          (if (nil? start)
-            (do
-              (>! c' loc)
-              (recur (js/Date.)))
+      (loop [start nil loc (<! c)]
+        (if (nil? start)
+          (do
+            (>! c' loc)
+            (recur (js/Date.)))
+          (let [loc (<! c)]
             (if (>= (- (js/Date.) start) ms)
-              (recur nil)
-              (recur (js/Date.)))))))
+              (recur nil loc)
+              (recur (js/Date.) loc))))))
     c'))
 
 (def debounced (debounce c 1000))
