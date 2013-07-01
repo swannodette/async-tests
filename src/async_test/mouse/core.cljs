@@ -2,7 +2,8 @@
   (:require [cljs.core.async :refer [chan sliding-buffer]]
             [clojure.string :as string])
   (:require-macros
-    [cljs.core.async.macros :as m :refer [go alts!]]))
+    [cljs.core.async.macros :as m :refer [go alts!]]
+    [clojure.core.match.js :refer [match]]))
  
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")
@@ -11,16 +12,32 @@
 
 (set! *print-fn* js-print)
 
-(def c (chan (sliding-buffer 1)))
+(def mc (chan (sliding-buffer 1)))
 (def loc-div (.getElementById js/document "location"))
+
+(def kc (chan (sliding-buffer 1)))
+(def key-div (.getElementById js/document "key"))
 
 (.addEventListener js/window "mousemove"
   (fn [e]
     (go
-      (>! c [(.-x e) (.-y e)]))))
+      (>! mc {:type :mouse :loc [(.-x e) (.-y e)]}))))
+
+(.addEventListener js/window "keyup"
+  (fn [e]
+    (go
+      (>! kc {:type :key :char (.fromCharCode js/String (.-keyCode e))}))))
  
+(defn set-html [el s]
+  (aset el "innerHTML" s))
+
+(defn handler [[e c]]
+  (match [e]
+    [{:type :mouse :loc loc}] (set-html loc-div (string/join ", " loc))
+    [{:type :key :char char}] (set-html key-div char)
+    :else nil))
+
 (go
   (while true
-    (let [[loc c] (alts! [c])]
-      (aset loc-div "innerHTML" (string/join ", " loc)))))
+    (handler (alts! [mc kc]) )))
 

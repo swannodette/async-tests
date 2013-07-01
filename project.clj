@@ -6,6 +6,7 @@
 
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1835"]
+                 [org.clojure/core.match "0.2.0-rc2"]
                  [core.async "0.1.0-SNAPSHOT"]]
 
   :plugins [[lein-cljsbuild "0.3.2"]]
