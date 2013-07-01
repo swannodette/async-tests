@@ -4,6 +4,13 @@
   (:require-macros
     [cljs.core.async.macros :as m :refer [go alts!]]))
  
+(defn js-print [& args]
+  (if (js* "typeof console != 'undefined'")
+    (.log js/console (apply str args))
+    (js/print (apply str args))))
+
+(set! *print-fn* js-print)
+
 (def c (chan (sliding-buffer 1)))
 (def loc-div (.getElementById js/document "location"))
 

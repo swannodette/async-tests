@@ -4,6 +4,13 @@
   (:require-macros
     [cljs.core.async.macros :as m :refer [go alts!]]))
 
+(defn js-print [& args]
+  (if (js* "typeof console != 'undefined'")
+    (.log js/console (apply str args))
+    (js/print (apply str args))))
+
+(set! *print-fn* js-print)
+
 (def c (chan (sliding-buffer 1)))
 (def loc-div (.getElementById js/document "location"))
 
@@ -17,8 +24,9 @@
     (js/setTimeout (fn [] (close! c)) ms)
     c))
 
-(defn throttle [c ms]
-  (let [c' (chan)]
+(defn throttle
+  ([c ms] (throttle (chan) c ms))
+  ([c' c ms]
     (go
       (while true
         (>! c' (<! c))

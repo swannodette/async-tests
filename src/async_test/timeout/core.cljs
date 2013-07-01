@@ -3,6 +3,13 @@
   (:require-macros
     [cljs.core.async.macros :as m :refer [go]]))
  
+(defn js-print [& args]
+  (if (js* "typeof console != 'undefined'")
+    (.log js/console (apply str args))
+    (js/print (apply str args))))
+
+(set! *print-fn* js-print)
+
 (defn timeout [ms]
   (let [c (chan)]
     (js/setTimeout (fn [] (close! c)) ms)
