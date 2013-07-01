@@ -35,4 +35,10 @@
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
+                :output-to "main.js"}}
+    {:id "robpike"
+     :source-paths ["src/async_test/robpike"]
+     :compiler {:optimizations :simple
+                :pretty-print true
+                :static-fns true
                 :output-to "main.js"}}]})
