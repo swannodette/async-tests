@@ -1,5 +1,5 @@
 (ns async-test.throttle.core
-  (:require [cljs.core.async :refer [chan close! sliding-buffer]]
+  (:require [cljs.core.async :refer [chan close! sliding-buffer put!]]
             [clojure.string :as string])
   (:require-macros
     [cljs.core.async.macros :as m :refer [go alts!]]))
