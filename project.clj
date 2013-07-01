@@ -42,4 +42,10 @@
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
+                :output-to "main.js"}}
+    {:id "bench"
+     :source-paths ["src/async_test/bench"]
+     :compiler {:optimizations :simple
+                :pretty-print true
+                :static-fns true
                 :output-to "main.js"}}]})
