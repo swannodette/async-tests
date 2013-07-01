@@ -20,13 +20,15 @@
 
 (.addEventListener js/window "mousemove"
   (fn [e]
-    (go
-      (>! mc {:type :mouse :loc [(.-x e) (.-y e)]}))))
+    (put! mc
+      {:type :mouse
+       :loc [(.-x e) (.-y e)]})))
 
 (.addEventListener js/window "keyup"
   (fn [e]
-    (go
-      (>! kc {:type :key :char (.fromCharCode js/String (.-keyCode e))}))))
+    (put! kc
+      {:type :key
+       :char (.fromCharCode js/String (.-keyCode e))})))
  
 (defn set-html [el s]
   (aset el "innerHTML" s))

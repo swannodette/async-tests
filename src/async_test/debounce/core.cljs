@@ -16,8 +16,7 @@
 
 (.addEventListener js/window "mousemove"
   (fn [e]
-    (go
-      (>! c [(.-x e) (.-y e)]))))
+    (put! c [(.-x e) (.-y e)])))
 
 (defn debounce
   ([c ms] (debounce (chan) c ms))
