@@ -1,9 +1,9 @@
 (ns async-test.autocomplete.core
-  (:require [cljs.core.async :as async :refer [<! >! chan put!]]
+  (:require [cljs.core.async :as async
+             :refer [<! >! chan dropping-buffer]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
-             :refer [timeout mouse-chan key-chan by-id to-char set-html
-                     throttle fan-out]])
+             :refer [key-chan by-id  throttle fan-out]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
                    [clojure.core.match.js :refer [match]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
