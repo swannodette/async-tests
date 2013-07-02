@@ -34,31 +34,31 @@
 
 (defn cleanup [ac c ac-el]
   (set-class ac-el "hidden")
-  (close-all! [ac c])
-  :done)
+  (close! ac))
 
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
         [c] (split-chan c 1)
         [c' c''] (split-chan c 2)
-        tc (text-chan (throttle c'' 500) input-el)]
+        tc (text-chan (throttle c'' 500) input-el)
+        killc (chan)]
     (clear-class ac-el)
     (go (loop []
           (let [e (<! c')]
-            (if-not (nil? e)
-              (if (no-input? e input-el)
-                (cleanup ac c ac-el)
+            (if (no-input? e input-el)
+              (do
+                (close! killc)
                 (recur))
-              (cleanup ac c ac-el)))))
+              (recur)))))
     (go (loop []
-          (let [s (<! tc)]
-            (if (nil? s)
+          (let [[v c] (alts! [tc killc])]
+            (if (= c killc)
               (cleanup ac c ac-el)
-              (if-not (string/blank? s)
+              (if-not (string/blank? v)
                 (do
-                  (<! (fetch s))
+                  (alts! [(fetch v) killc])
                   (recur))
-                (cleanup ac c ac-el))))))
+                (recur))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
