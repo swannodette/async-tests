@@ -28,7 +28,7 @@
   (let [c (chan)]
     (go
       (println "get data" value)
-      (<! c :data)
+      (>! c :data)
       (close! c))
     c))
 
@@ -53,15 +53,10 @@
 (defn autocompleter [input-el ac-el]
   (let [kc (key-chan input-el "keyup")
         [kc' kc''] (fan-out kc 2)]
-    (go
-      (loop [ac nil]
-        (<! kc')
-        (if (pos? (alength (.-value input-el)))
-          (recur (autocompleter* kc'' input-el ac-el))
-          (do
-            (println "Close autocompleter")
-            (<! ac)
-            (recur nil)))))))
+    (go-loop
+      (<! kc')
+      (when (pos? (alength (.-value input-el)))
+        (<! (autocompleter* kc'' input-el ac-el))))))
 
 (autocompleter
   (by-id "input")
