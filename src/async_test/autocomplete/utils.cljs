@@ -67,10 +67,13 @@
   (let [cs (if (number? cs-or-n)
              (repeatedly cs-or-n chan)
              cs-or-n)]
-    (go (while true
-          (let [x (<! in)
-                outs (map #(vector % x) cs)]
-            (alts! outs))))
+    (go (loop []
+          (let [x (<! in)]
+            (if-not (nil? x)
+              (do
+                (alts! (map #(vector % x) cs))
+                (recur))
+              :done))))
     cs))
 
 (defn set-class [el name]

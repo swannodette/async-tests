@@ -28,21 +28,30 @@
 (defn close-all! [cs]
   (doseq [c cs] (close! c)))
 
+(defn no-input? [e input-el]
+  (let [code (.-keyCode e)]
+    (and (= code 8) (string/blank? (.-value input-el)))))
+
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
         [c' c''] (fan-out c 2)
         tc (text-chan (throttle c'' 500) input-el)]
     (clear-class ac-el)
     (go (loop []
-          (if (= (.-keyCode (<! c')) 8)
-            (do
-              (set-class ac-el "hidden")
-              (close-all! [tc ac]))
-            (recur))))
-    (go (loop []
-          (let [s (<! tc)]
-            (<! (fetch s))
-            (recur))))
+          (let [e (<! c')]
+            (if-not (nil? e)
+              (if (no-input? e input-el)
+                (do 
+                  (set-class ac-el "hidden")
+                  (close-all! [ac c])
+                  :done)
+                (recur))
+              :done))))
+    (go
+      (loop []
+        (if (<! (fetch (<! tc)))
+          (recur)
+          :done)))
     ac))
 
 (defn autocompleter [input-el ac-el]
