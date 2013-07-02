@@ -48,4 +48,10 @@
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
+                :output-to "main.js"}}
+    {:id "autocomplete"
+     :source-paths ["src/async_test/autocomplete"]
+     :compiler {:optimizations :simple
+                :pretty-print true
+                :static-fns true
                 :output-to "main.js"}}]})
