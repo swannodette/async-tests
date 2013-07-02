@@ -41,17 +41,22 @@
           (let [e (<! c')]
             (if-not (nil? e)
               (if (no-input? e input-el)
-                (do 
-                  (set-class ac-el)
+                (do
+                  (set-class ac-el "hidden")
                   (close-all! [ac c])
                   :done)
                 (recur))
               :done))))
     (go
       (loop []
-        (if (<! (fetch (<! tc)))
-          (recur)
-          :done)))
+        (let [s (<! tc)]
+          (if (nil? s)
+            :done
+            (if-not (string/blank? s)
+              (do
+                (<! (fetch s))
+                (recur))
+              (recur))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
