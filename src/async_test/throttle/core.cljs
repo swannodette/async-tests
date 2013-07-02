@@ -10,25 +10,26 @@
 
 (set! *print-fn* js-print)
 
-(def c (chan (sliding-buffer 1)))
+(def c (chan))
 (def loc-div (.getElementById js/document "location"))
 
 (.addEventListener js/window "mousemove"
   (fn [e]
     (put! c [(.-x e) (.-y e)])))
 
-(defn timeout [ms]
-  (let [c (chan)]
-    (js/setTimeout (fn [] (close! c)) ms)
-    c))
-
 (defn throttle
   ([c ms] (throttle (chan) c ms))
   ([c' c ms]
     (go
-      (while true
-        (>! c' (<! c))
-        (<! (timeout ms))))
+      (loop [start nil x (<! c)]
+        (if (nil? start)
+          (do
+            (>! c' x)
+            (recur (js/Date.) nil))
+          (let [x (<! c)]
+            (if (>= (- (js/Date.) start) ms)
+              (recur nil x)
+              (recur start nil))))))
     c'))
 
 (def throttled (throttle c 500))
