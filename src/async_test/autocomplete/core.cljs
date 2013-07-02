@@ -39,6 +39,7 @@
     (clear-class ac-el)
     (go (loop []
           (let [e (<! c')]
+            (println (.-keyCode e))
             (if-not (nil? e)
               (if (no-input? e input-el)
                 (do 
