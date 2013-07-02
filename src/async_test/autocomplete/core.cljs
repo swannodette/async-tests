@@ -5,17 +5,17 @@
              :refer [timeout mouse-chan key-chan by-id to-char set-html
                      throttle fan-out]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
-                   [clojure.core.match.js :refer [match]]))
+                   [clojure.core.match.js :refer [match]]
+                   [async-test.autocomplete.macros :refer [go-loop]]))
 
 (def input-div (by-id "input"))
 (def kc (key-chan input-div "keyup"))
 
 (defn text-chan [kc]
   (let [c (chan)]
-    (go
-      (while true
-        (<! kc)
-        (>! c {:input (.-value input-div)})))
+    (go-loop
+      (<! kc)
+      (>! c {:input (.-value input-div)}))
     c))
 
 (defn handler [[e c]]
