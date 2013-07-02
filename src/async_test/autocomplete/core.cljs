@@ -8,14 +8,15 @@
                    [clojure.core.match.js :refer [match]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
 
-(def input-div (by-id "input"))
-(def kc (key-chan input-div "keyup"))
+(def input-el (by-id "input"))
+(def kc (key-chan input-el "keyup"))
 
-(defn text-chan [kc]
-  (let [c (chan)]
+(defn text-chan
+  ([cc input-el] (text-chan (chan) cc input-el))
+  ([c cc el]
     (go-loop
-      (<! kc)
-      (>! c {:input (.-value input-div)}))
+      (<! cc)
+      (>! c {:input (.-value input-el)}))
     c))
 
 (defn handler [[e c]]
@@ -25,7 +26,7 @@
     :else nil))
 
 (let [[kc' kc''] (fan-out kc 2)
-      tc         (text-chan (throttle kc'' 300))]
+       tc        (text-chan (throttle kc'' 300) input-el)]
   (go
     (while true
       (handler (alts! [kc' tc])))))
