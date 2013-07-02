@@ -37,10 +37,12 @@
   ([type] (mouse-chan (chan (sliding-buffer 1)) type))
   ([c type] (mouse-chan c js/window type))
   ([c el type]
-    (.addEventListener el type #(put! c %))))
+    (.addEventListener el type #(put! c %))
+    c))
 
 (defn key-chan
   ([type] (key-chan (chan (sliding-buffer 1)) type))
   ([c type] (key-chan c js/window type))
   ([c el type]
-    (.addEventListener el type #(put! c %))))
+    (.addEventListener el type #(put! c %))
+    c))
