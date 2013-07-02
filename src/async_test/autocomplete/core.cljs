@@ -32,6 +32,11 @@
   (let [code (.-keyCode e)]
     (and (= code 8) (string/blank? (.-value input-el)))))
 
+(defn cleanup [ac c ac-el]
+  (set-class ac-el "hidden")
+  (close-all! [ac c])
+  :done)
+
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
         [c] (split-chan c 1)
@@ -42,27 +47,25 @@
           (let [e (<! c')]
             (if-not (nil? e)
               (if (no-input? e input-el)
-                (do
-                  (set-class ac-el "hidden")
-                  (close-all! [ac c])
-                  :done)
+                (cleanup ac c ac-el)
                 (recur))
-              :done))))
+              (cleanup ac c ac-el)))))
     (go (loop []
           (let [s (<! tc)]
             (if (nil? s)
-              :done
+              (cleanup ac c ac-el)
               (if-not (string/blank? s)
                 (do
                   (<! (fetch s))
                   (recur))
-                (recur))))))
+                (cleanup ac c ac-el))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
   (let [kc (key-chan (chan (sliding-buffer 1)) input-el "keyup")
         [kc'] (split-chan kc 1)]
     (go-loop
+      (println "OPEN")
       (<! kc)
       (when (pos? (alength (.-value input-el)))
         (<! (autocompleter* kc' input-el ac-el))))))
