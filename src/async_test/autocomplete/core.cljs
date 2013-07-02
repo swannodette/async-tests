@@ -3,7 +3,7 @@
              :refer [<! >! chan close!]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
-             :refer [key-chan by-id throttle fan-out set-class
+             :refer [key-chan by-id throttle split-chan set-class
                      clear-class]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
                    [clojure.core.match.js :refer [match]]
@@ -34,16 +34,15 @@
 
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
-        [c' c''] (fan-out c 2)
+        [c' c''] (split-chan c 2)
         tc (text-chan (throttle c'' 500) input-el)]
     (clear-class ac-el)
     (go (loop []
           (let [e (<! c')]
-            (println (.-keyCode e))
             (if-not (nil? e)
               (if (no-input? e input-el)
                 (do 
-                  (set-class ac-el "hidden")
+                  (set-class ac-el)
                   (close-all! [ac c])
                   :done)
                 (recur))
@@ -57,7 +56,7 @@
 
 (defn autocompleter [input-el ac-el]
   (let [kc (key-chan input-el "keyup")
-        [kc' kc''] (fan-out kc 2)]
+        [kc' kc''] (split-chan kc 2 "outer")]
     (go-loop
       (<! kc')
       (when (pos? (alength (.-value input-el)))

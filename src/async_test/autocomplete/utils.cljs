@@ -56,14 +56,11 @@
         (<! (timeout ms))))
     c'))
 
-(defn fan-in [ins]
-  (let [c (chan)]
-    (go (while true
-          (let [[x] (alts! ins)]
-            (>! c x))))
-    c))
+(defn put-all! [cs x]
+  (doseq [c cs]
+    (put! c x)))
 
-(defn fan-out [in cs-or-n]
+(defn split-chan [in cs-or-n]
   (let [cs (if (number? cs-or-n)
              (repeatedly cs-or-n chan)
              cs-or-n)]
@@ -71,7 +68,7 @@
           (let [x (<! in)]
             (if-not (nil? x)
               (do
-                (alts! (map #(vector % x) cs))
+                (put-all! cs x)
                 (recur))
               :done))))
     cs))
