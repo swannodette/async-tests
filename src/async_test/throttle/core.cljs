@@ -1,8 +1,7 @@
 (ns async-test.throttle.core
-   (:require [cljs.core.async :refer [chan close! sliding-buffer put!]]
+  (:require [cljs.core.async :refer [chan close! sliding-buffer put!]]
              [clojure.string :as string])
-  (:require-macros
-    [cljs.core.async.macros :as m :refer [go alts!]]))
+  (:require-macros [cljs.core.async.macros :as m :refer [go alts!]]))
 
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")

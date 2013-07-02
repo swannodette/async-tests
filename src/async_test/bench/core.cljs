@@ -1,8 +1,6 @@
 (ns async-test.bench.core
-  (:require
-    [cljs.core.async :as async :refer [<! >! chan put! take!]])
-  (:require-macros
-    [cljs.core.async.macros :as m :refer [go]]))
+  (:require [cljs.core.async :as async :refer [<! >! chan put! take!]])
+  (:require-macros [cljs.core.async.macros :as m :refer [go]]))
 
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")

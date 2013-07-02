@@ -1,8 +1,6 @@
 (ns async-test.robpike.core
-  (:require
-    [cljs.core.async :as async :refer [<! >! chan close!]])
-  (:require-macros
-    [cljs.core.async.macros :as m :refer [go alt!]]))
+  (:require [cljs.core.async :as async :refer [<! >! chan close!]])
+  (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]))
 
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")

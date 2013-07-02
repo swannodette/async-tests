@@ -1,9 +1,8 @@
 (ns async-test.mouse.core
   (:require [cljs.core.async :refer [chan sliding-buffer put!]]
             [clojure.string :as string])
-  (:require-macros
-    [cljs.core.async.macros :as m :refer [go alts!]]
-    [clojure.core.match.js :refer [match]]))
+  (:require-macros [cljs.core.async.macros :as m :refer [go alts!]]
+                   [clojure.core.match.js :refer [match]]))
  
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")
