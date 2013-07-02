@@ -14,15 +14,8 @@
   ([c cc input-el]
     (go-loop
       (<! cc)
-      (>! c {:input (.-value input-el)}))
+      (>! c (.-value input-el)))
     c))
-
-(defn handler [[e c] input-el cc]
-  (match [e]
-    [{:input input}] {:state :fetch :value input}
-    [{"keyCode" 46}] {:state :done}
-    [{"keyCode" c}]  (.log js/console c)
-    :else nil))
 
 (defn fetch [value]
   (let [c (chan)]
@@ -32,22 +25,24 @@
       (close! c))
     c))
 
+(defn close-all! [cs]
+  (doseq [c cs] (close! c)))
+
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
         [c' c''] (fan-out c 2)
-        tc (text-chan (throttle c'' 300) input-el)]
-    (go
-      (clear-class ac-el)
-      (loop []
-        (let [m (handler (alts! [c' tc]))
-              st (get m :state)]
-          (condp = st
-            :done (do
-                    (set-class ac-el "hidden")
-                    (close! ac))
-            :fetch (let [xs (<! (fetch (get m :value)))]
-                     (recur))
-            (recur)))))
+        tc (text-chan (throttle c'' 500) input-el)]
+    (clear-class ac-el)
+    (go (loop []
+          (if (= (.-keyCode (<! c')) 8)
+            (do
+              (set-class ac-el "hidden")
+              (close-all! [tc ac]))
+            (recur))))
+    (go (loop []
+          (let [s (<! tc)]
+            (<! (fetch s))
+            (recur))))
     ac))
 
 (defn autocompleter [input-el ac-el]
