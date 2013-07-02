@@ -21,15 +21,16 @@
   ([c ms] (throttle (chan) c ms))
   ([c' c ms]
     (go
-      (loop [start nil x (<! c)]
-        (if (nil? start)
-          (do
-            (>! c' x)
-            (recur (js/Date.) nil))
-          (let [x (<! c)]
-            (if (>= (- (js/Date.) start) ms)
-              (recur nil x)
-              (recur start nil))))))
+      (loop [start nil x nil] ;; core.async bug we can't use <! here
+        (let [x (<! c)]
+          (if (nil? start)
+            (do
+              (>! c' x)
+              (recur (js/Date.) nil))
+            (let [x (<! c)]
+              (if (>= (- (js/Date.) start) ms)
+                (recur nil x)
+                (recur start nil)))))))
     c'))
 
 (def throttled (throttle c 500))
