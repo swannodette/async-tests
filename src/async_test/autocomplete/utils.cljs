@@ -34,15 +34,41 @@
     c))
 
 (defn mouse-chan
-  ([type] (mouse-chan (chan (sliding-buffer 1)) type))
-  ([c type] (mouse-chan c js/window type))
+  ([type] (mouse-chan js/window type))
+  ([el type] (mouse-chan (chan (sliding-buffer 1)) el type))
   ([c el type]
     (.addEventListener el type #(put! c %))
     c))
 
 (defn key-chan
-  ([type] (key-chan (chan (sliding-buffer 1)) type))
-  ([c type] (key-chan c js/window type))
+  ([type] (key-chan js/window type))
+  ([el type] (key-chan (chan (sliding-buffer 1)) el type))
   ([c el type]
     (.addEventListener el type #(put! c %))
     c))
+
+(defn throttle
+  ([c ms] (throttle (chan) c ms))
+  ([c' c ms]
+    (go
+      (while true
+        (>! c' (<! c))
+        (<! (timeout ms))))
+    c'))
+
+(defn fan-in [ins]
+  (let [c (chan)]
+    (go (while true
+          (let [[x] (alts! ins)]
+            (>! c x))))
+    c))
+
+(defn fan-out [in cs-or-n]
+  (let [cs (if (number? cs-or-n)
+             (repeatedly cs-or-n chan)
+             cs-or-n)]
+    (go (while true
+          (let [x (<! in)
+                outs (map #(vector % x) cs)]
+            (alts! outs))))
+    cs))

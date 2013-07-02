@@ -54,4 +54,4 @@
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
-                :output-to "main.js"}}]})
+                :output-to "autocomplete.js"}}]})
