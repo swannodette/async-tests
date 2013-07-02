@@ -60,7 +60,6 @@
                 (>! c' x)
                 (recur (js/Date.) nil))
               (let [x (<! c)]
-                (println "other case")
                 (if (>= (- (js/Date.) start) ms)
                   (recur nil x)
                   (recur start nil))))))))
