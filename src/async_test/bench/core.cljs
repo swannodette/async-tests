@@ -10,7 +10,7 @@
 (set! *print-fn* js-print)
 
 (defn pipe [in out]
-  (go (>! in (<! out))))
+  (go (>! out (<! in))))
 
 (def c0 (chan))
 (def c1 (chan))
@@ -23,12 +23,13 @@
 
 (pipe c0 c1)
 (pipe c1 c2)
+(pipe c2 c3)
 (pipe c3 c4)
 (pipe c4 c5)
+(pipe c5 c6)
 (pipe c6 c7)
 
-(put! c0 :foo)
-(take! c0 (fn [v] (println "got" v)))
+(def s (js/Date.))
 
 #_(go
   (loop [i 0]
@@ -37,3 +38,7 @@
       (do
         ()))))
 
+(comment
+  (put! c0 :foo)
+  (take! c7 (fn [v] (println "got" v)))
+  )
