@@ -56,7 +56,7 @@
 
 (defn autocompleter [input-el ac-el]
   (let [kc (key-chan input-el "keyup")
-        [kc' kc''] (split-chan kc 2 "outer")]
+        [kc' kc''] (split-chan kc 2)]
     (go-loop
       (<! kc')
       (when (pos? (alength (.-value input-el)))
