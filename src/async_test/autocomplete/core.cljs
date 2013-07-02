@@ -1,6 +1,6 @@
 (ns async-test.autocomplete.core
   (:require [cljs.core.async :as async
-             :refer [<! >! chan close!]]
+             :refer [<! >! chan close! dropping-buffer sliding-buffer]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
              :refer [key-chan by-id throttle split-chan set-class
@@ -34,6 +34,7 @@
 
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
+        [c] (split-chan c 1)
         [c' c''] (split-chan c 2)
         tc (text-chan (throttle c'' 500) input-el)]
     (clear-class ac-el)
@@ -47,25 +48,24 @@
                   :done)
                 (recur))
               :done))))
-    (go
-      (loop []
-        (let [s (<! tc)]
-          (if (nil? s)
-            :done
-            (if-not (string/blank? s)
-              (do
-                (<! (fetch s))
-                (recur))
-              (recur))))))
+    (go (loop []
+          (let [s (<! tc)]
+            (if (nil? s)
+              :done
+              (if-not (string/blank? s)
+                (do
+                  (<! (fetch s))
+                  (recur))
+                (recur))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc (key-chan input-el "keyup")
-        [kc' kc''] (split-chan kc 2)]
+  (let [kc (key-chan (chan (sliding-buffer 1)) input-el "keyup")
+        [kc'] (split-chan kc 1)]
     (go-loop
-      (<! kc')
+      (<! kc)
       (when (pos? (alength (.-value input-el)))
-        (<! (autocompleter* kc'' input-el ac-el))))))
+        (<! (autocompleter* kc' input-el ac-el))))))
 
 (autocompleter
   (by-id "input")
