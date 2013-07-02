@@ -51,9 +51,17 @@
   ([c ms] (throttle (chan) c ms))
   ([c' c ms]
     (go
-      (while true
-        (>! c' (<! c))
-        (<! (timeout ms))))
+      (loop [start nil x (<! c)]
+        (if (nil? x)
+          :done
+          (if (nil? start)
+            (do
+              (>! c' x)
+              (recur (js/Date.) nil))
+            (let [x (<! c)]
+              (if (>= (- (js/Date.) start) ms)
+                (recur nil x)
+                (recur start nil)))))))
     c'))
 
 (defn put-all! [cs x]
