@@ -9,11 +9,9 @@
                    [clojure.core.match.js :refer [match]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
 
-(def input-el (by-id "input"))
-
 (defn text-chan
   ([cc input-el] (text-chan (chan) cc input-el))
-  ([c cc el]
+  ([c cc input-el]
     (go-loop
       (<! cc)
       (>! c {:input (.-value input-el)}))
@@ -34,35 +32,37 @@
       (close! c))
     c))
 
-(defn autocompleter* [input-el c]
+(defn autocompleter* [c input-el ac-el]
   (let [ac (chan)
         [c' c''] (fan-out c 2)
         tc (text-chan (throttle c'' 300) input-el)]
     (go
-      (clear-class input-el)
+      (clear-class ac-el)
       (loop []
         (let [m (handler (alts! [c' tc]))
               st (get m :state)]
           (condp = st
             :done (do
-                    (set-class input-el "hidden")
+                    (set-class ac-el "hidden")
                     (close! ac))
             :fetch (let [xs (<! (fetch (get m :value)))]
                      (recur))
             (recur)))))
     ac))
 
-(defn autocompleter [input-el]
+(defn autocompleter [input-el ac-el]
   (let [kc (key-chan input-el "keyup")
         [kc' kc''] (fan-out kc 2)]
     (go
       (loop [ac nil]
         (<! kc')
         (if (pos? (alength (.-value input-el)))
-          (recur (autocompleter* input-el kc''))
+          (recur (autocompleter* kc'' input-el ac-el))
           (do
             (println "Close autocompleter")
             (<! ac)
             (recur nil)))))))
 
-(autocompleter input-el)
+(autocompleter
+  (by-id "input")
+  (by-id "completions"))
