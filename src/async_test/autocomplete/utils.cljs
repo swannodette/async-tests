@@ -72,3 +72,9 @@
                 outs (map #(vector % x) cs)]
             (alts! outs))))
     cs))
+
+(defn set-class [el name]
+  (set! (.-className el) name))
+
+(defn clear-class [el name]
+  (set! (.-className el) ""))
