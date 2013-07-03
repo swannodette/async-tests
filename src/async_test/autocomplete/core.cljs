@@ -27,17 +27,24 @@
   (let [ac  (chan)
         c'  (copy-chan c)
         thc (throttle c' 500)]
-    (go-loop
-      (let [tmc    (timeout 300)
-            [e sc] (alts! [c thc tmc])]
-        (cond
-          (and (= sc c) (no-input? e input-el))
-          (do (set-class ac-el "hidden")
-            (close! ac))
+    (go
+      (loop [tmc nil]
+        (let [[e sc] (if tmc
+                       (alts! [c thc tmc])
+                       (alts! [c thc]))]
+          (cond
+            (and (= sc c) (no-input? e input-el))
+            (do (set-class ac-el "hidden")
+              (close! ac))
+
+            (= sc c) (recur (timeout 300))
           
-          (get #{thc tmc} sc)
-          (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
-            (show-results r)))))
+            (get #{thc tmc} sc)
+            (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
+              (show-results r)
+              (recur nil))
+
+            :else (recur tmc)))))
     ac))
 
 (defn autocompleter [input-el ac-el]
