@@ -4,7 +4,13 @@ A series of ClojureScript experiments with core.async.
 
 ## Usage
 
-You can build all of the examples from the project directory with:
+Clone the [core.async](https://github.com/clojure/core.async) to a
+convenient location. `cd` into the repo and run `lein install`.
+
+Then clone this repo into a convenient location and `cd` into it.
+
+You can build now build all of the examples from the project directory
+with:
 
 ```
 lein cljsbuild once NAME
