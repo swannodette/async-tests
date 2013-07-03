@@ -91,6 +91,9 @@
               :done))))
     cs))
 
+(defn copy-chan [c]
+  (first (split-chan c 1)))
+
 (defn set-class [el name]
   (set! (.-className el) name))
 

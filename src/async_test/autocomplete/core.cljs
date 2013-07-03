@@ -3,7 +3,7 @@
              :refer [<! >! chan close! sliding-buffer]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
-             :refer [key-chan by-id split-chan set-class throttle
+             :refer [key-chan by-id copy-chan set-class throttle
                      clear-class timeout jsonp-chan set-html]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
@@ -24,9 +24,9 @@
       (set-html rs))))
 
 (defn autocompleter* [c input-el ac-el]
-  (let [ac   (chan)
-        [c'] (split-chan c 1)
-        thc  (throttle c' 500)]
+  (let [ac  (chan)
+        c'  (copy-chan c)
+        thc (throttle c' 500)]
     (go-loop
       (let [tmc    (timeout 300)
             [e sc] (alts! [c thc tmc])]
@@ -41,8 +41,8 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc    (key-chan input-el "keyup")
-        [kc'] (split-chan kc 1)]
+  (let [kc  (key-chan input-el "keyup")
+        kc' (copy-chan kc)]
     (go-loop
       (<! kc)
       (when (pos? (alength (.-value input-el)))
