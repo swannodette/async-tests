@@ -16,14 +16,15 @@
        (string/blank? (.-value input-el))))
 
 (defn show-results [r]
-  (let [xs (nth r 1)]
+  (let [rs (by-id "completions")
+        _  (clear-class rs)
+        xs (nth r 1)]
     (->> (for [x xs] (str "<li>" x "</li>"))
       (apply str)
-      (set-html (by-id "completions")))))
+      (set-html rs))))
 
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)]
-    (clear-class ac-el)
     (go
       (loop [start (js/Date.)]
         (let [e (<! c)]
