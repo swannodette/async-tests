@@ -1,6 +1,6 @@
 # async-test
 
-A series of experiments with core.async.
+A series of ClojureScript experiments with core.async.
 
 ## Usage
 
