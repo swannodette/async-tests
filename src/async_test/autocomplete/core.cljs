@@ -27,13 +27,14 @@
   (let [ac (chan)]
     (go
       (loop [start (js/Date.)]
-        (let [e (<! c)]
+        (let [tc (timeout 300)
+              [e c'] (alts! [c tc])]
           (cond
-            (no-input? e input-el)
+            (and (= c' c) (no-input? e input-el))
             (do (set-class ac-el "hidden")
               (close! ac))
             
-            (>= (- (js/Date.) start) 500)
+            (or (= c' tc) (>= (- (js/Date.) start) 500))
             (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
               (show-results r)
               (recur (js/Date.)))
