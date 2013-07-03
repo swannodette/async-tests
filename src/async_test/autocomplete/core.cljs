@@ -41,7 +41,7 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc    (key-chan (chan (sliding-buffer 1)) input-el "keyup")
+  (let [kc    (key-chan input-el "keyup")
         [kc'] (split-chan kc 1)]
     (go-loop
       (<! kc)
