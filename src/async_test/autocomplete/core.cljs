@@ -28,8 +28,8 @@
         [c'] (split-chan c 1)
         thc  (throttle c' 500)]
     (go-loop
-      (let [tmc (timeout 300)
-             [e sc] (alts! [c thc tmc])]
+      (let [tmc    (timeout 300)
+            [e sc] (alts! [c thc tmc])]
         (cond
           (and (= sc c) (no-input? e input-el))
           (do (set-class ac-el "hidden")
