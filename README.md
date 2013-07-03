@@ -9,7 +9,7 @@ convenient location. `cd` into the repo and run `lein install`.
 
 Then clone this repo into a convenient location and `cd` into it.
 
-You can build now build all of the examples from the project directory
+You can now build all of the examples from the project directory
 with:
 
 ```
