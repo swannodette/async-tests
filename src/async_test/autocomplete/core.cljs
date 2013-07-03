@@ -1,12 +1,11 @@
 (ns async-test.autocomplete.core
   (:require [cljs.core.async :as async
-             :refer [<! >! chan close! dropping-buffer sliding-buffer]]
+             :refer [<! >! chan close! sliding-buffer]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
-             :refer [key-chan by-id throttle split-chan set-class
+             :refer [key-chan by-id split-chan set-class
                      clear-class timeout]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
-                   [clojure.core.match.js :refer [match]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
 
 (defn fetch [value]
