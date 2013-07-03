@@ -17,8 +17,7 @@
 
 (defn show-results [r]
   (let [xs (nth r 1)]
-    (->> (for [x xs]
-           (str "<li>" x "</li>"))
+    (->> (for [x xs] (str "<li>" x "</li>"))
       (apply str)
       (set-html (by-id "completions")))))
 
