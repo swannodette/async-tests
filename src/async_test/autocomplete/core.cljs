@@ -4,22 +4,23 @@
             [clojure.string :as string]
             [async-test.autocomplete.utils
              :refer [key-chan by-id split-chan set-class
-                     clear-class timeout]])
+                     clear-class timeout jsonp-chan set-html]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
 
-(defn fetch [value]
-  (let [c (chan)]
-    (go
-      (println "get data" value)
-      (<! (timeout (rand-int 300)))
-      (>! c :data)
-      (close! c))
-    c))
+(def base-url
+  "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")
 
 (defn no-input? [e input-el]
-  (let [code (.-keyCode e)]
-    (and (= code 8) (string/blank? (.-value input-el)))))
+  (and (= (.-keyCode e) 8)
+       (string/blank? (.-value input-el))))
+
+(defn show-results [r]
+  (let [xs (nth r 1)]
+    (->> (for [x xs]
+           (str "<li>" x "</li>"))
+      (apply str)
+      (set-html (by-id "completions")))))
 
 (defn autocompleter* [c input-el ac-el]
   (let [ac (chan)]
@@ -33,7 +34,8 @@
               (close! ac))
             
             (>= (- (js/Date.) start) 500)
-            (do (<! (fetch (.-value input-el)))
+            (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
+              (show-results r)
               (recur (js/Date.)))
 
             :else
@@ -41,7 +43,7 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc (key-chan (chan (sliding-buffer 1)) input-el "keyup")
+  (let [kc    (key-chan (chan (sliding-buffer 1)) input-el "keyup")
         [kc'] (split-chan kc 1)]
     (go-loop
       (<! kc)

@@ -1,6 +1,8 @@
 (ns async-test.autocomplete.utils
   (:require [cljs.core.async :as async
-             :refer [<! >! chan close! sliding-buffer put!]])
+             :refer [<! >! chan close! sliding-buffer put!]]
+            [goog.net.Jsonp]
+            [goog.Uri])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]))
 
 (defn js-print [& args]
@@ -46,6 +48,13 @@
   ([c el type]
     (.addEventListener el type #(put! c %))
     c))
+
+(defn jsonp-chan
+  ([uri] (jsonp-chan (chan) uri))
+  ([c uri]
+    (let [jsonp (goog.net.Jsonp. (goog.Uri. uri))]
+      (.send jsonp nil #(put! c %))
+      c)))
 
 (defn throttle
   ([c ms] (throttle (chan) c ms))
