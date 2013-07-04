@@ -30,11 +30,6 @@
 (defn to-char [code]
   (.fromCharCode js/String code))
 
-(defn timeout [ms]
-  (let [c (chan)]
-    (js/setTimeout (fn [] (close! c)) ms)
-    c))
-
 (defn mouse-chan
   ([type] (mouse-chan js/window type))
   ([el type] (mouse-chan (chan (sliding-buffer 1)) el type))
@@ -78,7 +73,7 @@
   (doseq [c cs]
     (put! c x)))
 
-(defn split-chan [in cs-or-n]
+(defn multiplex [in cs-or-n]
   (let [cs (if (number? cs-or-n)
              (repeatedly cs-or-n chan)
              cs-or-n)]
@@ -92,7 +87,7 @@
     cs))
 
 (defn copy-chan [c]
-  (first (split-chan c 1)))
+  (first (multiplex c 1)))
 
 (defn set-class [el name]
   (set! (.-className el) name))

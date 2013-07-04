@@ -1,10 +1,10 @@
 (ns async-test.autocomplete.core
   (:require [cljs.core.async :as async
-             :refer [<! >! chan close! sliding-buffer]]
+             :refer [<! >! chan close! sliding-buffer timeout]]
             [clojure.string :as string]
             [async-test.autocomplete.utils
              :refer [key-chan by-id copy-chan set-class throttle
-                     clear-class timeout jsonp-chan set-html]])
+                     clear-class jsonp-chan set-html]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
                    [async-test.autocomplete.macros :refer [go-loop]]))
 
