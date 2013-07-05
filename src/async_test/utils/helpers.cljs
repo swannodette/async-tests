@@ -115,12 +115,13 @@
         (let [sync (second cs)]
           (when sync (<! sync))
           (let [[v sc] (alts! cs :priority true)]
-            (condp = sc
-              source (do (>! c v)
-                       (if sync
-                         (recur cs)
-                         (recur (conj cs (interval-chan msecs :falling)))))
-              sync (recur (pop cs)))))))
+            (recur
+              (condp = sc
+                source (do (>! c v)
+                         (if sync
+                           cs
+                           (conj cs (interval-chan msecs :falling))))
+                sync (pop cs)))))))
     c))
 
 (defn debounce
@@ -131,7 +132,8 @@
         (let [toc (second cs)]
           (when-not toc (>! c (<! source)))
           (let [[v sc] (alts! cs)]
-            (if (= sc source)
-              (recur (conj (if-not toc cs (pop cs)) (timeout msecs)))
-              (recur (pop cs)))))))
+            (recur
+              (if (= sc source)
+                (conj (if-not toc cs (pop cs)) (timeout msecs))
+                (pop cs)))))))
     c))
