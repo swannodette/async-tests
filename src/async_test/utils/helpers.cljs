@@ -1,9 +1,12 @@
 (ns async-test.utils.helpers
-  (:require [cljs.core.async :as async
-             :refer [<! >! chan close! sliding-buffer put!]]
-            [goog.net.Jsonp]
-            [goog.Uri])
-  (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]))
+  (:require
+    [cljs.core.async :as async
+     :refer [<! >! chan close! sliding-buffer put! timeout]]
+    [goog.net.Jsonp]
+    [goog.Uri])
+  (:require-macros
+    [cljs.core.async.macros :as m :refer [go alt!]]
+    [async-test.utils.macros :refer [go-loop]]))
 
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")
@@ -21,6 +24,9 @@
       (if (.hasOwnProperty coll prop)
         (aget coll prop)
         not-found))))
+
+(defn now []
+  (.valueOf (js/Date.)))
 
 (defn by-id [id] (.getElementById js/document id))
 
@@ -43,6 +49,14 @@
     (let [jsonp (goog.net.Jsonp. (goog.Uri. uri))]
       (.send jsonp nil #(put! c %))
       c)))
+
+(defn interval-chan
+  ([msecs] (interval-chan (chan) msecs))
+  ([c msecs]
+    (go-loop
+      (>! c (now))
+      (<! (timeout msecs)))
+    c))
 
 (defn throttle
   ([c ms] (throttle (chan) c ms))

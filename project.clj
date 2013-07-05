@@ -15,44 +15,44 @@
   {:builds
    [{:id "mouse"
      :source-paths ["src/async_test/mouse"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "timeout"
      :source-paths ["src/async_test/timeout"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "throttle"
      :source-paths ["src/async_test/throttle"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "debounce"
      :source-paths ["src/async_test/debounce"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "robpike"
      :source-paths ["src/async_test/robpike"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "bench"
      :source-paths ["src/async_test/bench"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "main.js"}}
     {:id "autocomplete"
      :source-paths ["src/async_test/autocomplete"
                     "src/async_test/utils"]
-     :compiler {:optimizations :simple
-                :pretty-print true
+     :compiler {:optimizations :whitespace
+                :pretty-print false
                 :static-fns true
                 :output-to "autocomplete.js"}}]})
