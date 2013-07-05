@@ -58,23 +58,20 @@
       (<! (timeout msecs)))
     c))
 
+(defn throttle-by
+  ([source sync]
+    (throttle-by (chan) source sync))
+  ([c source sync]
+    (go-loop
+      (<! sync)
+      (>! c (<! source)))
+    c))
+
 (defn throttle
-  ([c ms] (throttle (chan) c ms))
-  ([c' c ms]
-    (go
-      (loop [start nil x nil] ;; bug in core.async, can't use <! here
-        (let [x (<! c)]
-          (if (nil? x)
-            :done
-            (if (nil? start)
-              (do
-                (>! c' x)
-                (recur (js/Date.) nil))
-              (let [x (<! c)]
-                (if (>= (- (js/Date.) start) ms)
-                  (recur nil x)
-                  (recur start nil))))))))
-    c'))
+  ([source msecs]
+    (throttle (chan) source msecs))
+  ([c source msecs]
+    (throttle-by c source (interval-chan msecs))))
 
 (defn put-all! [cs x]
   (doseq [c cs]
