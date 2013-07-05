@@ -5,7 +5,7 @@
             [async-test.utils.helpers
              :refer [event-chan by-id copy-chan set-class throttle
                      clear-class jsonp-chan set-html now multiplex
-                     after-last]])
+                     after-last map-chan filter-chan]])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
@@ -24,7 +24,7 @@
       (apply str)
       (set-html rs))))
 
-(defn autocompleter* [c input-el ac-el]
+(defn autocompleter* [{c :key} input-el ac-el]
   (let [ac (chan)
         [c tc dc] (map #(%1 %2)
                     [identity #(throttle % 500) #(after-last % 300)]
@@ -43,12 +43,12 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc  (:chan (event-chan input-el "keyup"))
-        kc' (copy-chan kc)]
+  (let [kc (:chan (event-chan input-el "keyup"))        
+        chans {:key (copy-chan kc)}]
     (go-loop
       (<! kc)
       (when (pos? (alength (.-value input-el)))
-        (<! (autocompleter* kc' input-el ac-el))))))
+        (<! (autocompleter* chans input-el ac-el))))))
 
 (autocompleter
   (by-id "input")
