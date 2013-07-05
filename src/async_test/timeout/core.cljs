@@ -1,5 +1,5 @@
 (ns async-test.timeout.core
-  (:require [cljs.core.async :refer [chan close!]])
+  (:require [cljs.core.async :refer [chan close! timeout]])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]))
  
 (defn js-print [& args]
@@ -8,13 +8,6 @@
     (js/print (apply str args))))
 
 (set! *print-fn* js-print)
-
-(defn timeout [ms]
-  (let [c (chan)]
-    (js/setTimeout (fn [] (close! c)) ms)
-    c))
-
-(def empty [])
  
 (go
   (<! (timeout 1000))
