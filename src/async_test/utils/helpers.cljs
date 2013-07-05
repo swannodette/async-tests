@@ -122,3 +122,16 @@
                          (recur (conj cs (interval-chan msecs :falling)))))
               sync (recur (pop cs)))))))
     c))
+
+(defn debounce
+  ([source msecs] (debounce (chan) source msecs))
+  ([c source msecs]
+    (go
+      (loop [cs [source]]
+        (let [toc (second cs)]
+          (when-not toc (>! c (<! source)))
+          (let [[v sc] (alts! cs)]
+            (if (= sc source)
+              (recur (conj (if-not toc cs (pop cs)) (timeout msecs)))
+              (recur (pop cs)))))))
+    c))
