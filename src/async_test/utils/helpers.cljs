@@ -1,7 +1,8 @@
 (ns async-test.utils.helpers
   (:require
     [cljs.core.async :as async
-     :refer [<! >! chan close! sliding-buffer put! timeout]]
+     :refer [<! >! chan close! sliding-buffer dropping-buffer
+             put! timeout]]
     [goog.net.Jsonp]
     [goog.Uri])
   (:require-macros
@@ -92,7 +93,7 @@
 
 (defn interval-chan
   ([msecs]
-    (interval-chan (chan (sliding-buffer 1)) msecs))
+    (interval-chan (chan (dropping-buffer 1)) msecs))
   ([c msecs]
     (go-loop
       (>! c (now))
