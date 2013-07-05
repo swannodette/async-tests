@@ -30,16 +30,9 @@
 (defn to-char [code]
   (.fromCharCode js/String code))
 
-(defn mouse-chan
-  ([type] (mouse-chan js/window type))
-  ([el type] (mouse-chan (chan (sliding-buffer 1)) el type))
-  ([c el type]
-    (.addEventListener el type #(put! c %))
-    c))
-
-(defn key-chan
-  ([type] (key-chan js/window type))
-  ([el type] (key-chan (chan (sliding-buffer 1)) el type))
+(defn event-chan
+  ([type] (event-chan js/window type))
+  ([el type] (event-chan (chan (sliding-buffer 1)) el type))
   ([c el type]
     (.addEventListener el type #(put! c %))
     c))
