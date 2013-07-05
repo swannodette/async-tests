@@ -39,7 +39,7 @@
 
             (= sc c) (recur (timeout 300))
           
-            (get #{thc tmc} sc)
+            (#{thc tmc} sc)
             (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
               (show-results r)
               (recur nil))
@@ -48,7 +48,7 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc  (event-chan input-el "keyup")
+  (let [kc  (:chan (event-chan input-el "keyup"))
         kc' (copy-chan kc)]
     (go-loop
       (<! kc)
