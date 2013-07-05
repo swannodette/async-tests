@@ -8,12 +8,18 @@
     [cljs.core.async.macros :as m :refer [go alt!]]
     [async-test.utils.macros :refer [go-loop]]))
 
+;; =============================================================================
+;; Printing
+
 (defn js-print [& args]
   (if (js* "typeof console != 'undefined'")
     (.log js/console (apply str args))
     (js/print (apply str args))))
 
 (set! *print-fn* js-print)
+
+;; =============================================================================
+;; Pattern matching support
 
 (extend-type object
   ILookup
@@ -25,6 +31,9 @@
         (aget coll prop)
         not-found))))
 
+;; =============================================================================
+;; Utilities
+
 (defn now []
   (.valueOf (js/Date.)))
 
@@ -35,6 +44,35 @@
 
 (defn to-char [code]
   (.fromCharCode js/String code))
+
+(defn set-class [el name]
+  (set! (.-className el) name))
+
+(defn clear-class [el name]
+  (set! (.-className el) ""))
+
+;; =============================================================================
+;; Channels
+
+(defn put-all! [cs x]
+  (doseq [c cs]
+    (put! c x)))
+
+(defn multiplex [in cs-or-n]
+  (let [cs (if (number? cs-or-n)
+             (repeatedly cs-or-n chan)
+             cs-or-n)]
+    (go (loop []
+          (let [x (<! in)]
+            (if-not (nil? x)
+              (do
+                (put-all! cs x)
+                (recur))
+              :done))))
+    cs))
+
+(defn copy-chan [c]
+  (first (multiplex c 1)))
 
 (defn event-chan
   ([type] (event-chan js/window type))
@@ -72,29 +110,3 @@
     (throttle (chan) source msecs))
   ([c source msecs]
     (throttle-by c source (interval-chan msecs))))
-
-(defn put-all! [cs x]
-  (doseq [c cs]
-    (put! c x)))
-
-(defn multiplex [in cs-or-n]
-  (let [cs (if (number? cs-or-n)
-             (repeatedly cs-or-n chan)
-             cs-or-n)]
-    (go (loop []
-          (let [x (<! in)]
-            (if-not (nil? x)
-              (do
-                (put-all! cs x)
-                (recur))
-              :done))))
-    cs))
-
-(defn copy-chan [c]
-  (first (multiplex c 1)))
-
-(defn set-class [el name]
-  (set! (.-className el) name))
-
-(defn clear-class [el name]
-  (set! (.-className el) ""))
