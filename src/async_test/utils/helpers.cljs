@@ -84,6 +84,22 @@
       {:chan c
        :unsubscribe #(.removeEventListener el type writer)})))
 
+(defn map-chan
+  ([f source] (map-chan (chan) f source))
+  ([c f source]
+    (go-loop
+      (>! c (f (<! source))))
+    c))
+
+(defn filter-chan
+  ([f source] (filter-chan (chan) f source))
+  ([c f source]
+    (go-loop
+      (let [v (<! source)]
+        (when (f v)
+          (>! c v))))
+    c))
+
 (defn jsonp-chan
   ([uri] (jsonp-chan (chan) uri))
   ([c uri]
