@@ -93,24 +93,32 @@
 
 (defn interval-chan
   ([msecs]
-    (interval-chan (chan (dropping-buffer 1)) msecs))
-  ([c msecs]
-    (go-loop
-      (>! c (now))
-      (<! (timeout msecs)))
-    c))
-
-(defn throttle-by
-  ([source sync]
-    (throttle-by (chan (sliding-buffer 1)) source sync))
-  ([c source sync]
-    (go-loop
-      (<! sync)
-      (>! c (<! source)))
+    (interval-chan msecs :leading))
+  ([msecs type]
+    (interval-chan (chan (dropping-buffer 1)) msecs type))
+  ([c msecs type]
+    (condp = type
+      :leading (go-loop
+                 (>! c (now))
+                 (<! (timeout msecs)))
+      :falling (go-loop
+                 (<! (timeout msecs))
+                 (>! c (now))))
     c))
 
 (defn throttle
   ([source msecs]
     (throttle (chan) source msecs))
   ([c source msecs]
-    (throttle-by c source (interval-chan msecs))))
+    (go
+      (loop [cs [source]]
+        (let [sync (second cs)]
+          (when sync (<! sync))
+          (let [[v sc] (alts! cs :priority true)]
+            (condp = sc
+              source (do (>! c v)
+                       (if sync
+                         (recur cs)
+                         (recur (conj cs (interval-chan msecs :falling)))))
+              sync (recur (pop cs)))))))
+    c))
