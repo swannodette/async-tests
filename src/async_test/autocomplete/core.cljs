@@ -2,11 +2,11 @@
   (:require [cljs.core.async :as async
              :refer [<! >! chan close! sliding-buffer timeout]]
             [clojure.string :as string]
-            [async-test.autocomplete.utils
+            [async-test.utils.helpers
              :refer [key-chan by-id copy-chan set-class throttle
                      clear-class jsonp-chan set-html]])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
-                   [async-test.autocomplete.macros :refer [go-loop]]))
+                   [async-test.utils.macros :refer [go-loop]]))
 
 (def base-url
   "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")

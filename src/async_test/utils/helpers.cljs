@@ -1,4 +1,4 @@
-(ns async-test.autocomplete.utils
+(ns async-test.utils.helpers
   (:require [cljs.core.async :as async
              :refer [<! >! chan close! sliding-buffer put!]]
             [goog.net.Jsonp]

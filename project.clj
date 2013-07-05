@@ -50,7 +50,8 @@
                 :static-fns true
                 :output-to "main.js"}}
     {:id "autocomplete"
-     :source-paths ["src/async_test/autocomplete"]
+     :source-paths ["src/async_test/autocomplete"
+                    "src/async_test/utils"]
      :compiler {:optimizations :simple
                 :pretty-print true
                 :static-fns true
