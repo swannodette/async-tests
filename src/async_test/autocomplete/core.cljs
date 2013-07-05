@@ -4,8 +4,9 @@
             [clojure.string :as string]
             [async-test.utils.helpers
              :refer [event-chan by-id copy-chan set-class throttle
-                     clear-class jsonp-chan set-html]])
-  (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]
+                     clear-class jsonp-chan set-html now multiplex
+                     after-last]])
+  (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
 (def base-url
@@ -24,27 +25,21 @@
       (set-html rs))))
 
 (defn autocompleter* [c input-el ac-el]
-  (let [ac  (chan)
-        c'  (copy-chan c)
-        thc (throttle c' 500)]
-    (go
-      (loop [tmc nil]
-        (let [[e sc] (if tmc
-                       (alts! [c thc tmc])
-                       (alts! [c thc]))]
-          (cond
-            (and (= sc c) (no-input? e input-el))
+  (let [ac (chan)
+        [c tc dc] (map #(%1 %2)
+                    [identity #(throttle % 500) #(after-last % 300)]
+                    (multiplex c 3))]
+    (go-loop
+      (let [[v sc] (alts! [c tc dc])]
+        (condp contains? sc
+          #{c}
+          (if (no-input? v input-el)
             (do (set-class ac-el "hidden")
-              (close! ac))
-
-            (= sc c) (recur (timeout 300))
+              (close! ac)))
           
-            (#{thc tmc} sc)
-            (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
-              (show-results r)
-              (recur nil))
-
-            :else (recur tmc)))))
+          #{tc dc}
+          (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
+            (show-results r)))))
     ac))
 
 (defn autocompleter [input-el ac-el]

@@ -137,3 +137,18 @@
                 (conj (if-not toc cs (pop cs)) (timeout msecs))
                 (pop cs)))))))
     c))
+
+(defn after-last
+  ([source msecs]
+    (after-last (chan) source msecs))
+  ([c source msecs]
+    (go
+      (loop [cs [source]]
+        (let [toc (second cs)]
+          (let [[v sc] (alts! cs)]
+            (recur
+              (condp = sc
+                source (conj (if toc (pop cs) cs)
+                         (timeout msecs))
+                toc (do (>! c (now)) (pop cs))))))))
+    c))
