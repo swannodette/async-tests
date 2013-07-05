@@ -9,7 +9,7 @@
 (def loc-div (.getElementById js/document "location"))
 
 (def throttled
-  (throttle (event-chan js/window "mousemove") 1000))
+  (throttle (:chan (event-chan js/window "mousemove")) 1000))
  
 (go
   (while true

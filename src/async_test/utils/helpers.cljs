@@ -78,8 +78,10 @@
   ([type] (event-chan js/window type))
   ([el type] (event-chan (chan (sliding-buffer 1)) el type))
   ([c el type]
-    (.addEventListener el type #(put! c %))
-    c))
+    (let [writer #(put! c %)]
+      (.addEventListener el type writer)
+      {:chan c
+       :unsubscribe #(.removeEventListener el type writer)})))
 
 (defn jsonp-chan
   ([uri] (jsonp-chan (chan) uri))
@@ -89,7 +91,8 @@
       c)))
 
 (defn interval-chan
-  ([msecs] (interval-chan (chan) msecs))
+  ([msecs]
+    (interval-chan (chan (sliding-buffer 1)) msecs))
   ([c msecs]
     (go-loop
       (>! c (now))
@@ -98,7 +101,7 @@
 
 (defn throttle-by
   ([source sync]
-    (throttle-by (chan) source sync))
+    (throttle-by (chan (sliding-buffer 1)) source sync))
   ([c source sync]
     (go-loop
       (<! sync)
