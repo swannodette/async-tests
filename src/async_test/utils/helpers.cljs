@@ -127,20 +127,18 @@
   ([c source msecs]
     (let [skip (chan)]
       (go
-        (loop [cs [source skip]]
-          (let [[_ _ sync] cs]
+        (loop [cs [source]]
+          (let [[_ sync] cs]
             (when sync (<! sync))
             (let [[v sc] (alts! cs :priority true)]
               (recur
                 (condp = sc
-                  skip (if sync (pop cs) cs)
                   source (do (>! c v)
                            (if sync
                              cs
-                             (conj cs (interval-chan msecs :falling))))
+                              (conj cs (interval-chan msecs :falling))))
                   sync (pop cs)))))))
-      {:chan c
-       :skip skip})))
+      c)))
 
 (defn debounce
   ([source msecs] (debounce (chan) source msecs))
@@ -154,7 +152,7 @@
               (if (= sc source)
                 (conj (if-not toc cs (pop cs)) (timeout msecs))
                 (pop cs)))))))
-    {:chan c}))
+    c))
 
 (defn after-last
   ([source msecs]
@@ -162,17 +160,15 @@
   ([c source msecs]
     (let [skip (chan)]
       (go
-        (loop [cs [source skip]]
-          (let [[_ _ toc] cs]
-            (let [[v sc] (alts! cs)]
+        (loop [cs [source]]
+          (let [[_ toc] cs]
+            (let [[v sc] (alts! cs :priority true)]
               (recur
                 (condp = sc
-                  skip (if toc (pop cs) cs)
                   source (conj (if toc (pop cs) cs)
                            (timeout msecs))
                   toc (do (>! c (now)) (pop cs))))))))
-      {:chan c
-       :skip skip})))
+      c)))
 
 (defn fan-in [ins]
   (let [c (chan)]

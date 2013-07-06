@@ -11,5 +11,5 @@
 
 (go
   (while true
-    (let [e (<! (:chan debounced))]
+    (let [e (<! debounced)]
       (aset loc-div "innerHTML" (str (.-x e) ", " (.-y e))))))

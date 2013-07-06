@@ -13,5 +13,5 @@
  
 (go
   (while true
-    (let [e (<! (:chan throttled))]
+    (let [e (<! throttled)]
       (aset loc-div "innerHTML" (str (.-x e) ", " (.-y e))))))

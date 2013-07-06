@@ -5,7 +5,7 @@
             [async-test.utils.helpers
              :refer [event-chan by-id copy-chan set-class throttle
                      clear-class jsonp-chan set-html now multiplex
-                     after-last map-chan filter-chan fan-in]])
+                     after-last map-chan filter-chan fan-in debounce]])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
@@ -26,39 +26,29 @@
   (filter-chan string/blank?
     (map-chan #(do % (.-value el)) c)))
 
-(defn new-throttle [c msecs]
-  (go
-    (<! c)
-    (throttle c msecs)))
-
 (defn autocompleter*
   [{start :start c :chan blur :blur} input-el ac-el]
   (let [ac (chan)
         [c' c'' c'''] (multiplex c 3)
         no-input      (no-input c' input-el)
-        delay         (after-last c''' 300)]
+        delay         (after-last c'' 300)
+        interval      (throttle c'' 500)
+        fetch         (debounce (fan-in [delay interval]) 300)]
     (go
       (<! start)
-      (loop [interval (throttle c'' 500)]
-        (let [[v sc] (alts! [blur no-input interval delay])]
+      (loop []
+        (let [[v sc] (alts! [blur no-input fetch])]
           (condp contains? sc
             #{no-input blur}
             (do (set-class ac-el "hidden")
-              (do
-                (>! ac :next)
-                (<! start)
-                (recur (<! (new-throttle c'' 500)))))
+              (>! ac :done)
+              (<! start)
+              (recur))
 
-            #{interval delay}
-            (do
-              (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
-                (show-results r)
-                (recur
-                  (if (= sc delay)
-                    (do
-                      (close! interval)
-                      (<! (new-throttle c'' 500)))
-                    interval))))))))
+            #{fetch}
+            (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
+              (show-results r)
+              (recur))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
