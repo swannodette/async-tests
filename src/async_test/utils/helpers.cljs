@@ -128,20 +128,24 @@
   ([source msecs]
     (throttle (chan) source msecs))
   ([c source msecs]
-    (let [skip (chan)]
-      (go
-        (loop [cs [source]]
-          (let [[_ sync] cs]
-            (when sync (<! sync))
-            (let [[v sc] (alts! cs :priority true)]
-              (recur
-                (condp = sc
-                  source (do (>! c v)
-                           (if sync
-                             cs
-                              (conj cs (interval-chan msecs :falling))))
-                  sync (pop cs)))))))
-      c)))
+    (throttle c source msecs nil))
+  ([c source msecs reset]
+    (go
+      (loop [cs [(or reset (chan)) source]]
+        (let [[_ _ sync] cs]
+          (when sync (<! sync))
+          (let [[v sc] (alts! cs :priority true)]
+            (recur
+              (condp = sc
+                reset (do
+                        (<! v)
+                        (if sync (pop cs) cs))
+                source (do (>! c v)
+                         (if sync
+                           cs
+                           (conj cs (interval-chan msecs :falling))))
+                sync (pop cs)))))))
+    c))
 
 (defn debounce
   ([source msecs] (debounce (chan) source msecs))
@@ -161,13 +165,18 @@
   ([source msecs]
     (after-last (chan) source msecs))
   ([c source msecs]
+    (after-last (chan) source msecs nil))
+  ([c source msecs reset]
     (let [skip (chan)]
       (go
-        (loop [cs [source]]
-          (let [[_ toc] cs]
+        (loop [cs [(or reset (chan)) source]]
+          (let [[_ _ toc] cs]
             (let [[v sc] (alts! cs :priority true)]
               (recur
                 (condp = sc
+                  reset (do
+                          (<! v)
+                          (if toc (pop cs) cs))
                   source (conj (if toc (pop cs) cs)
                            (timeout msecs))
                   toc (do (>! c (now)) (pop cs))))))))
