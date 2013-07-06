@@ -1,17 +1,11 @@
 (ns async-test.bench.core
   (:require [cljs.core.async :as async
              :refer [<! >! chan put! take! sliding-buffer]]
-            [cljs.core.async.impl.dispatch])
+            [cljs.core.async.impl.dispatch]
+            [async-test.utils.helpers])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]))
 
 (def dispatches (atom 0))
-
-(defn js-print [& args]
-  (if (js* "typeof console != 'undefined'")
-    (.log js/console (apply str args))
-    (js/print (apply str args))))
-
-(set! *print-fn* js-print)
 
 (defn pipe [in out]
   (go (>! out (<! in))))

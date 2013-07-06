@@ -1,13 +1,7 @@
 (ns async-test.robpike.core
-  (:require [cljs.core.async :as async :refer [<! >! chan close! timeout]])
+  (:require [cljs.core.async :as async :refer [<! >! chan close! timeout]]
+            [async-test.utils.helpers])
   (:require-macros [cljs.core.async.macros :as m :refer [go alt!]]))
-
-(defn js-print [& args]
-  (if (js* "typeof console != 'undefined'")
-    (.log js/console (apply str args))
-    (js/print (apply str args))))
-
-(set! *print-fn* js-print)
 
 (defn fake-search [kind]
   (fn [c query]
