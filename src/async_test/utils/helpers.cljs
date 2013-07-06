@@ -71,8 +71,11 @@
               :done))))
     cs))
 
-(defn copy-chan [c]
-  (first (multiplex c 1)))
+(defn copy-chan
+  ([c]
+    (first (multiplex c 1)))
+  ([out c]
+    (first (multiplex c [out]))))
 
 (defn event-chan
   ([type] (event-chan js/window type))

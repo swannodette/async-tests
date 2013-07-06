@@ -1,6 +1,7 @@
 (ns async-test.autocomplete.core
   (:require [cljs.core.async :as async
-             :refer [<! >! chan close! put! take! sliding-buffer timeout]]
+             :refer [<! >! chan close! put! take! sliding-buffer
+                     dropping-buffer timeout]]
             [clojure.string :as string]
             [async-test.utils.helpers
              :refer [event-chan by-id copy-chan set-class throttle
@@ -32,8 +33,8 @@
         [c' c'' c'''] (multiplex c 3)
         no-input      (no-input c' input-el)
         delay         (after-last c'' 300)
-        interval      (throttle c'' 500)
-        fetch         (debounce (fan-in [delay interval]) 300)]
+        interval      (throttle c''' 500)
+        fetch         (debounce (fan-in [delay interval]) 500)]
     (go
       (<! start)
       (loop []
@@ -53,15 +54,15 @@
 
 (defn autocompleter [input-el ac-el]
   (let [c (filter-chan
-             (complement IGNORE)
-             (map-chan
-               #(get % "keyCode")
-               (:chan (event-chan input-el "keyup"))))
-        [kc kc'] (multiplex c 2)
+            (complement IGNORE)
+            (map-chan
+              #(get % "keyCode")
+              (:chan (event-chan input-el "keyup"))))
+        [kc kc'] (multiplex c [(chan (dropping-buffer 1)) (chan)])
         ctrl {:start (chan)
               :chan kc'
               :blur (:chan (event-chan input-el "blur"))}
-        ac (autocompleter* ctrl input-el ac-el)]
+        ac   (autocompleter* ctrl input-el ac-el)]
     (go-loop
       (<! kc)
       (when (pos? (alength (.-value input-el)))
