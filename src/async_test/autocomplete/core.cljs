@@ -9,6 +9,8 @@
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
+(def IGNORE #{98 16 37 38 39 40 18 20})
+
 (def base-url
   "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")
 
@@ -25,19 +27,23 @@
     (map-chan #(do % (.-value el)) c)))
 
 (defn autocompleter*
-  [{c :chan blur :blur} input-el ac-el]
-  (let [ac            (chan)
+  [{start :start c :chan blur :blur} input-el ac-el]
+  (let [ac (chan)
         [c' c'' c'''] (multiplex c 3)
         no-input      (no-input c' input-el)
         delay         (after-last c''' 300)]
     (go
+      (<! start)
       (loop [interval (throttle c'' 500)]
         (let [[v sc] (alts! [blur no-input interval delay])]
           (condp contains? sc
             #{no-input blur}
             (do (set-class ac-el "hidden")
-              (close! ac))
-          
+              (do
+                (>! ac :next)
+                (<! start)
+                (recur (throttle c'' 500))))
+
             #{interval delay}
             (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
               (show-results r)
@@ -50,13 +56,21 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [kc (:chan (event-chan input-el "keyup"))
-        chans {:chan (copy-chan kc)
-               :blur (:chan (event-chan input-el "blur"))}]
+  (let [c (filter-chan
+             (complement IGNORE)
+             (map-chan
+               #(get % "keyCode")
+               (:chan (event-chan input-el "keyup"))))
+        [kc kc'] (multiplex c 2)
+        ctrl {:start (chan)
+              :chan kc'
+              :blur (:chan (event-chan input-el "blur"))}
+        ac (autocompleter* ctrl input-el ac-el)]
     (go-loop
       (<! kc)
       (when (pos? (alength (.-value input-el)))
-        (<! (autocompleter* chans input-el ac-el))))))
+        (>! (:start ctrl) :go)
+        (<! ac)))))
 
 (autocompleter
   (by-id "input")
