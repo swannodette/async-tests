@@ -26,6 +26,11 @@
   (filter-chan string/blank?
     (map-chan #(do % (.-value el)) c)))
 
+(defn new-throttle [c msecs]
+  (go
+    (<! c)
+    (throttle c msecs)))
+
 (defn autocompleter*
   [{start :start c :chan blur :blur} input-el ac-el]
   (let [ac (chan)
@@ -42,17 +47,18 @@
               (do
                 (>! ac :next)
                 (<! start)
-                (recur (throttle c'' 500))))
+                (recur (<! (new-throttle c'' 500)))))
 
             #{interval delay}
-            (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
-              (show-results r)
-              (recur
-                (if (= sc delay)
-                  (do
-                    (close! interval)
-                    (throttle c'' 500))
-                  interval)))))))
+            (do
+              (let [r (<! (jsonp-chan (str base-url (.-value input-el))))]
+                (show-results r)
+                (recur
+                  (if (= sc delay)
+                    (do
+                      (close! interval)
+                      (<! (new-throttle c'' 500)))
+                    interval))))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
