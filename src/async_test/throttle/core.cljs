@@ -2,9 +2,10 @@
   (:require
     [cljs.core.async :refer [chan close! sliding-buffer put!]]
     [clojure.string :as string]
-    [async-test.utils.helpers :refer [event-chan throttle]])
+    [async-test.utils.helpers :refer [event-chan throttle interval-chan]])
   (:require-macros
-    [cljs.core.async.macros :as m :refer [go]]))
+    [cljs.core.async.macros :as m :refer [go]]
+    [async-test.utils.macros :refer [go-loop]]))
 
 (def loc-div (.getElementById js/document "location"))
 
