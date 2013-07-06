@@ -42,7 +42,7 @@
           (condp contains? sc
             #{no-input blur}
             (do (set-class ac-el "hidden")
-              (>! ac :done)
+              (>! ac (.-value input-el))
               (<! start)
               (recur))
 
@@ -64,16 +64,13 @@
               :blur (:chan (event-chan input-el "blur"))}
         ac   (autocompleter* ctrl input-el ac-el)]
     (go
-      (loop [first false]
-        (if-not first
-          (do
-            (<! kc)
-            (recur true))
-          (do
-            (when (and first (pos? (alength (.-value input-el))))
-              (>! (:start ctrl) :go)
-              (<! ac))
-            (recur false)))))))
+      (loop [query nil]
+        (<! kc)
+        (recur
+          (when (and (not= query (.-value input-el))
+                     (pos? (alength (.-value input-el))))
+            (>! (:start ctrl) :go)
+            (<! ac)))))))
 
 (autocompleter
   (by-id "input")
