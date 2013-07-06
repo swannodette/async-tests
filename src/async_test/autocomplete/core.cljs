@@ -75,3 +75,8 @@
   (by-id "input")
   (by-id "completions"))
 
+;; TODO: throttle & after-last should be stoppable, we could pass control
+;;       channel, which must be read from to continue, they can reset
+;;       themselves via this mechanism
+;; TODO: handle selection
+
