@@ -20,5 +20,5 @@
 
 (go
   (while true
-    (handler (alts! [mc kc]) )))
+    (handler (alts! (map :chan [mc kc])) )))
 
