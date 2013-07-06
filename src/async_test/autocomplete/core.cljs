@@ -63,11 +63,17 @@
               :chan kc'
               :blur (:chan (event-chan input-el "blur"))}
         ac   (autocompleter* ctrl input-el ac-el)]
-    (go-loop
-      (<! kc)
-      (when (pos? (alength (.-value input-el)))
-        (>! (:start ctrl) :go)
-        (<! ac)))))
+    (go
+      (loop [first false]
+        (if-not first
+          (do
+            (<! kc)
+            (recur true))
+          (do
+            (when (and first (pos? (alength (.-value input-el))))
+              (>! (:start ctrl) :go)
+              (<! ac))
+            (recur false)))))))
 
 (autocompleter
   (by-id "input")
