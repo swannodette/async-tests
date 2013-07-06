@@ -125,19 +125,22 @@
   ([source msecs]
     (throttle (chan) source msecs))
   ([c source msecs]
-    (go
-      (loop [cs [source]]
-        (let [sync (second cs)]
-          (when sync (<! sync))
-          (let [[v sc] (alts! cs :priority true)]
-            (recur
-              (condp = sc
-                source (do (>! c v)
-                         (if sync
-                           cs
-                           (conj cs (interval-chan msecs :falling))))
-                sync (pop cs)))))))
-    c))
+    (let [skip (chan)]
+      (go
+        (loop [cs [source skip]]
+          (let [[_ _ sync] cs]
+            (when sync (<! sync))
+            (let [[v sc] (alts! cs :priority true)]
+              (recur
+                (condp = sc
+                  skip (if sync (pop cs) cs)
+                  source (do (>! c v)
+                           (if sync
+                             cs
+                             (conj cs (interval-chan msecs :falling))))
+                  sync (pop cs)))))))
+      {:chan c
+       :skip skip})))
 
 (defn debounce
   ([source msecs] (debounce (chan) source msecs))
@@ -151,22 +154,25 @@
               (if (= sc source)
                 (conj (if-not toc cs (pop cs)) (timeout msecs))
                 (pop cs)))))))
-    c))
+    {:chan c}))
 
 (defn after-last
   ([source msecs]
     (after-last (chan) source msecs))
   ([c source msecs]
-    (go
-      (loop [cs [source]]
-        (let [toc (second cs)]
-          (let [[v sc] (alts! cs)]
-            (recur
-              (condp = sc
-                source (conj (if toc (pop cs) cs)
-                         (timeout msecs))
-                toc (do (>! c (now)) (pop cs))))))))
-    c))
+    (let [skip (chan)]
+      (go
+        (loop [cs [source skip]]
+          (let [[_ _ toc] cs]
+            (let [[v sc] (alts! cs)]
+              (recur
+                (condp = sc
+                  skip (if toc (pop cs) cs)
+                  source (conj (if toc (pop cs) cs)
+                           (timeout msecs))
+                  toc (do (>! c (now)) (pop cs))))))))
+      {:chan c
+       :skip skip})))
 
 (defn fan-in [ins]
   (let [c (chan)]
