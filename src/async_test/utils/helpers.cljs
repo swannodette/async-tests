@@ -81,10 +81,10 @@
   ([type] (event-chan js/window type))
   ([el type] (event-chan (chan (sliding-buffer 1)) el type))
   ([c el type]
-    (let [writer #(put! c %)]
-      (.addEventListener el type writer)
-      {:chan c
-       :unsubscribe #(.removeEventListener el type writer)})))
+     (let [writer #(put! c %)]
+       (.addEventListener el type writer)
+       {:chan c
+        :unsubscribe #(.removeEventListener el type writer)})))
 
 (defn map-chan
   ([f source] (map-chan (chan) f source))
@@ -186,3 +186,54 @@
           (let [[x] (alts! ins)]
             (>! c x))))
     c))
+
+(defn uniq-chan
+  [c]
+  (let [c' (chan)]
+    (go
+     (loop [v ::_initial_ v' (<! c)]
+       (when (not= v v')
+         (>! c' v'))
+       (recur v' (<! c))))
+    c'))
+
+(defn timeout-chan [ms source]
+  (let [c' (chan)]
+    (go
+     (let [t (timeout 500)
+           [cc channel] (alts! [source t])]
+       (if (= t channel)
+         (close! c')
+         (>! c' cc))))
+    c'))
+
+(defn throt [ms c]
+  (let [c' (chan 1)]
+    (go
+     (loop [v1 ::_none_
+            t (timeout ms)]
+       (let [[v ch]
+             (alts! [c t])]
+         (if (= c ch)
+           (recur v t)
+           (do
+             (if (= ::_none_ v1)
+               (>! c' (<! c))
+               (>! c' v1))
+             (recur ::_none_ (timeout ms)))))))
+    c'))
+
+(defn monitor [name source]
+  (let [c' (chan)]
+    (go
+     (loop [v (<! source)]
+       (.log js/console (str name ": " v))
+       (>! c' v)
+       (recur (<! source))))
+    c'))
+
+(defn trans-chan [f source]
+  (let [c' (chan)]
+    (go-loop
+     (>! c' (<! (f (<! source)))))
+    c'))
