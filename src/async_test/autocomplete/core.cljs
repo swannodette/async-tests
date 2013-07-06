@@ -53,11 +53,9 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [c (filter-chan
-            (complement IGNORE)
-            (map-chan
-              #(get % "keyCode")
-              (:chan (event-chan input-el "keyup"))))
+  (let [c (->> (:chan (event-chan input-el "keyup"))
+            (map-chan #(get % "keyCode"))
+            (filter-chan (complement IGNORE))) 
         [kc kc'] (multiplex c [(chan (dropping-buffer 1)) (chan)])
         ctrl {:start (chan)
               :chan kc'
