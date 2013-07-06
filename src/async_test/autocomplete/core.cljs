@@ -23,9 +23,10 @@
       (apply str)
       (set-html rs))))
 
-(defn no-input [c el] 
-  (filter-chan string/blank?
-    (map-chan #(do % (.-value el)) c)))
+(defn no-input [c el]
+  (->> c
+    (map-chan #(do % (.-value el)))
+    (filter-chan string/blank?)))
 
 (defn autocompleter*
   [{start :start c :chan blur :blur} input-el ac-el]
@@ -67,7 +68,7 @@
         (recur
           (when (and (not= query (.-value input-el))
                      (pos? (alength (.-value input-el))))
-            (>! (:start ctrl) :go)
+            (>! (:start ctrl) (now))
             (<! ac)))))))
 
 (autocompleter
