@@ -137,8 +137,7 @@
           (let [[v sc] (alts! cs :priority true)]
             (recur
               (condp = sc
-                reset (do
-                        (<! v)
+                reset (do (<! v)
                         (if sync (pop cs) cs))
                 source (do (>! c v)
                          (if sync
@@ -174,8 +173,7 @@
             (let [[v sc] (alts! cs :priority true)]
               (recur
                 (condp = sc
-                  reset (do
-                          (<! v)
+                  reset (do (<! v)
                           (if toc (pop cs) cs))
                   source (conj (if toc (pop cs) cs)
                            (timeout msecs))
