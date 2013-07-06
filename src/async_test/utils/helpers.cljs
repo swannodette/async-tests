@@ -27,10 +27,9 @@
   (-lookup [coll k]
     (-lookup coll k nil))
   (-lookup [coll k not-found]
-    (let [prop (str k)]
-      (if (.hasOwnProperty coll prop)
-        (aget coll prop)
-        not-found))))
+    (if (.hasOwnProperty coll k)
+      (aget coll k)
+      not-found)))
 
 ;; =============================================================================
 ;; Utilities
@@ -167,4 +166,11 @@
                 source (conj (if toc (pop cs) cs)
                          (timeout msecs))
                 toc (do (>! c (now)) (pop cs))))))))
+    c))
+
+(defn fan-in [ins]
+  (let [c (chan)]
+    (go (while true
+          (let [[x] (alts! ins)]
+            (>! c x))))
     c))
