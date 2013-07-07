@@ -129,17 +129,20 @@
     (throttle (chan) source msecs))
   ([c source msecs]
     (go
-      (loop [cs [source]]
+      (loop [state ::init last nil cs [source]]
         (let [[_ sync] cs]
-          (when sync (<! sync))
-          (let [[v sc] (alts! cs :priority true)]
-            (recur
-              (condp = sc
-                source (do (>! c v)
-                         (if sync
-                           cs
-                           (conj cs (interval-chan msecs :falling))))
-                sync (pop cs)))))))
+          (let [[v sc] (alts! cs)]
+            (condp = sc
+              source (condp = state
+                       ::init (do (>! c v)
+                                (recur ::throttling last
+                                  (conj cs (timeout msecs))))
+                       ::throttling (recur state v cs))
+              sync (if last 
+                     (do (>! c last)
+                       (recur state nil
+                         (conj (pop cs) (timeout msecs))))
+                     (recur ::init last (pop cs))))))))
     c))
 
 (defn debounce
