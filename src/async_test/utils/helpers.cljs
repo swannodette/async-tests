@@ -164,7 +164,7 @@
   ([source msecs]
     (after-last (chan) source msecs))
   ([c source msecs]
-    (after-last (chan) source msecs nil))
+    (after-last c source msecs nil))
   ([c source msecs reset]
     (let [skip (chan)]
       (go
