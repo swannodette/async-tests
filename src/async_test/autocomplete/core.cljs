@@ -11,6 +11,9 @@
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
+(def UP_ARROW 38)
+(def DOWN_ARROW 40)
+
 (def base-url
   "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")
 
@@ -23,18 +26,23 @@
       (set-html rs))))
 
 (defn autocompleter*
-  [{c :chan blur :blur} input-el ac-el]
+  [{c :chan arrows :arrows blur :blur} input-el ac-el]
   (let [ac (chan)
         [c' c''] (multiplex c 2)
         no-input (filter-chan string/blank? c')
         fetch    (throttle (filter-chan #(> (count %) 2) c'') 500)]
     (go
       (loop [cancel false]
-        (let [[v sc] (alts! [blur no-input fetch])]
+        (let [[v sc] (alts! [blur no-input arrows fetch])]
           (condp contains? sc
             #{no-input blur}
             (do (set-class ac-el "hidden")
               (recur true))
+
+            #{arrows}
+            (do
+              (println v)
+              (recur cancel))
 
             #{fetch}
             (if-not cancel
@@ -51,7 +59,7 @@
         ctrl {:chan   (distinct-chan
                         (map-chan #(do % (.-value input-el))
                           keys'))
-              :arrows (filter-chan #{37 38 39 40} keys'')
+              :arrows (filter-chan #{UP_ARROW DOWN_ARROW} keys'')
               :blur   (:chan (event-chan input-el "blur"))}]
     (autocompleter* ctrl input-el ac-el)))
 
