@@ -61,7 +61,7 @@
   (-count [coll]
     (if (instance? js/NodeList coll)
       (alength coll)
-      (throw (js/Error. (str coll "does not implement ICounted")))))
+      (accumulating-seq-count coll)))
   IIndexed
   (-nth
     ([coll n]
@@ -71,7 +71,7 @@
         (if (< n (count coll))
           (aget coll n)
           (throw (js/Error. "NodeList access out of bounds")))
-        (throw (js/Error. (str coll "does not implement ILookup")))))))
+        (linear-traversal-nth coll (.floor js/Math n) not-found)))))
 
 ;; =============================================================================
 ;; Channels
