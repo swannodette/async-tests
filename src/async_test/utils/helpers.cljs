@@ -152,14 +152,19 @@
     (debounce (chan) source msecs))
   ([c source msecs]
     (go
-      (loop [cs [source]]
-        (let [[_ toc] cs]
-          (when-not toc (>! c (<! source)))
+      (loop [state ::init cs [source]]
+        (let [[_ threshold] cs]
           (let [[v sc] (alts! cs)]
-            (recur
-              (condp = sc
-                source (conj (if-not toc cs (pop cs)) (timeout msecs))
-                toc (pop cs)))))))
+            (condp = sc
+              source (condp = state
+                       ::init
+                         (do (>! c v)
+                           (recur ::debouncing
+                             (conj cs (timeout msecs))))
+                       ::debouncing
+                         (recur state
+                           (conj (pop cs) (timeout msecs))))
+              threshold (recur ::init (pop cs)))))))
     c))
 
 (defn after-last
