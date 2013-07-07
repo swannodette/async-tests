@@ -45,15 +45,16 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [ctrl {:chan (distinct-chan
-                      (map-chan #(do % (.-value input-el))
-                        (:chan (event-chan input-el "keyup"))))
-              :blur (:chan (event-chan input-el "blur"))}]
+  (let [raw   (event-chan input-el "keyup")
+        codes (map-chan #(get % "keyCode") (:chan raw))
+        [keys' keys''] (multiplex codes 2)
+        ctrl {:chan   (distinct-chan
+                        (map-chan #(do % (.-value input-el))
+                          keys'))
+              :arrows (filter-chan #{37 38 39 40} keys'')
+              :blur   (:chan (event-chan input-el "blur"))}]
     (autocompleter* ctrl input-el ac-el)))
 
 (autocompleter
   (by-id "input")
   (by-id "completions"))
-
-;; TODO: handle arrow movemennt & selection
-
