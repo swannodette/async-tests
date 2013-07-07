@@ -79,7 +79,7 @@
 
 (defn event-chan
   ([type] (event-chan js/window type))
-  ([el type] (event-chan (chan (sliding-buffer 1)) el type))
+  ([el type] (event-chan (chan) el type))
   ([c el type]
     (let [writer #(put! c %)]
       (.addEventListener el type writer)
