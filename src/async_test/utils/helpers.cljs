@@ -124,6 +124,8 @@
                  (>! c (now))))
     c))
 
+;; using core.match could make this nicer probably - David
+
 (defn throttle
   ([source msecs]
     (throttle (chan) source msecs))
