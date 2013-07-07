@@ -73,19 +73,19 @@
         no-input (filter-chan string/blank? c')
         fetch    (throttle (filter-chan #(> (count %) 2) c'') 500)]
     (go
-      (loop [cancel false]
+      (loop [data nil cancel false]
         (let [[v sc] (alts! [blur no-input arrows fetch])]
           (condp contains? sc
             #{no-input blur}
             (do (set-class ac-el "hidden")
-              (recur true))
+              (recur data true))
 
             #{fetch}
             (if-not cancel
               (let [r (<! (jsonp-chan (str base-url v)))]
                 (show-results r)
-                (recur false))
-              (recur false))))))
+                (recur dta false))
+              (recur data false))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
@@ -99,11 +99,11 @@
               :blur   (:chan (event-chan input-el "blur"))}]
     (autocompleter* ctrl input-el ac-el)))
 
-#_(autocompleter
+(autocompleter
   (by-id "input")
   (by-id "completions"))
 
-(let [c (:chan
+#_(let [c (:chan
           (selector
             (filter-chan SELECTOR_KEYS
               (map-chan #(.-keyCode %)
