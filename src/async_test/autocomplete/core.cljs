@@ -25,6 +25,9 @@
       (apply str)
       (set-html rs))))
 
+(defn selector [list-el]
+  )
+
 (defn autocompleter*
   [{c :chan arrows :arrows blur :blur} input-el ac-el]
   (let [ac (chan)
