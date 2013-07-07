@@ -131,6 +131,7 @@
     (throttle c source msecs nil))
   ([c source msecs reset]
     (go
+      (when reset (<! (<! reset)))
       (loop [cs [(or reset (chan)) source]]
         (let [[_ _ sync] cs]
           (when sync (<! sync))
@@ -168,6 +169,7 @@
   ([c source msecs reset]
     (let [skip (chan)]
       (go
+        (when reset (<! (<! reset)))
         (loop [cs [(or reset (chan)) source]]
           (let [[_ _ toc] cs]
             (let [[v sc] (alts! cs :priority true)]
