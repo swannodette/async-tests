@@ -45,11 +45,14 @@
           (let [[v sc] (alts! [key-chan control])
                 items  (by-tag-name list-el "li")]
             (cond
-              (and (= control sc) (= v :clear))
-              (do
-                (when (number? selected)
-                  (clear-class (nth items selected)))
-                (recur ::none))
+              (= control sc)
+              (condp = v
+                :clear
+                (do
+                  (when (number? selected)
+                    (clear-class (nth items selected)))
+                  (recur ::none))
+                :exit :done)
             
               (= v ENTER)
               (do
@@ -83,13 +86,16 @@
               (recur data true))
 
             select
-            (let [_ (>! select (now))
-                  selector (:chan (selector arrows ac-el data))
-                  [v sc] (alts! [selector hide])]
-              (when (= sc selector)
-                (aset input-el "value" v))
-              (set-class ac-el "hidden")
-              (<! select)
+            (if data
+              (let [_ (>! select (now))
+                   {selector :chan control :control} (selector arrows ac-el data)
+                   [v sc] (alts! [selector hide])]
+                (when (= sc selector)
+                  (aset input-el "value" v)
+                  (>! control :exit))
+                (set-class ac-el "hidden")
+                (<! select)
+                (recur data true))
               (recur data true))
 
             fetch
@@ -114,14 +120,4 @@
 (autocompleter
   (by-id "input")
   (by-id "completions"))
-
-#_(let [c (:chan
-          (selector
-            (filter-chan SELECTOR_KEYS
-              (map-chan #(.-keyCode %)
-                (:chan (event-chan js/window "keyup"))))
-            (by-id "selector-test")
-            ["one" "two" "three"]))]
-  (go-loop
-    (println (<! c))))
 
