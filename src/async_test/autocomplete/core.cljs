@@ -70,21 +70,33 @@
   [{c :chan arrows :arrows blur :blur} input-el ac-el]
   (let [ac (chan)
         [c' c''] (multiplex c 2)
-        no-input (filter-chan string/blank? c')
-        fetch    (throttle (filter-chan #(> (count %) 2) c'') 500)]
+        hide     (fan-in [(filter-chan string/blank? c') blur])
+        fetch    (throttle (filter-chan #(> (count %) 2) c'') 500)
+        [select arrows] (multiplex arrows
+                          [(chan (dropping-buffer 1)) (chan)])]
     (go
       (loop [data nil cancel false]
-        (let [[v sc] (alts! [blur no-input arrows fetch])]
-          (condp contains? sc
-            #{no-input blur}
+        (let [[v sc] (alts! [hide select fetch])]
+          (condp =  sc
+            hide
             (do (set-class ac-el "hidden")
               (recur data true))
 
-            #{fetch}
+            select
+            (let [_ (>! select (now))
+                  selector (:chan (selector arrows ac-el data))
+                  [v sc] (alts! [selector hide])]
+              (when (= sc selector)
+                (aset input-el "value" v))
+              (set-class ac-el "hidden")
+              (<! select)
+              (recur data true))
+
+            fetch
             (if-not cancel
-              (let [r (<! (jsonp-chan (str base-url v)))]
-                (show-results r)
-                (recur dta false))
+              (let [res (<! (jsonp-chan (str base-url v)))]
+                (show-results res)
+                (recur (nth res 1) false))
               (recur data false))))))
     ac))
 
@@ -97,7 +109,7 @@
                           keys'))
               :arrows (filter-chan SELECTOR_KEYS keys'')
               :blur   (:chan (event-chan input-el "blur"))}]
-    (autocompleter* ctrl input-el ac-el)))
+    {:chan (autocompleter* ctrl input-el ac-el)}))
 
 (autocompleter
   (by-id "input")
