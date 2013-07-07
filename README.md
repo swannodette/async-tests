@@ -23,6 +23,12 @@ open it in your browser.
 For the `autocomplete` example open `autocomplete.html` in your
 favorite browser after building it.
 
+## Contributions
+
+I'm not taking pull requests for this project. It's a personal
+core.async playground. While I hope people find some of these examples
+informative that is not the primary goal.
+
 ## License
 
 Copyright © 2013 David Nolen
