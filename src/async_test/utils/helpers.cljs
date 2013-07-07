@@ -51,6 +51,28 @@
 (defn clear-class [el name]
   (set! (.-className el) ""))
 
+(defn by-tag-name [el tag]
+  (.getElementsByTagName el tag))
+
+;; DO NOT DO THIS IN LIBRARIES
+
+(extend-type default
+  ICounted
+  (-count [coll]
+    (if (instance? js/NodeList coll)
+      (alength coll)
+      (throw (js/Error. (str coll "does not implement ICounted")))))
+  IIndexed
+  (-nth
+    ([coll n]
+      (-nth coll n nil))
+    ([coll n not-found]
+      (if (instance? js/NodeList coll)
+        (if (< n (count coll))
+          (aget coll n)
+          (throw (js/Error. "NodeList access out of bounds")))
+        (throw (js/Error. (str coll "does not implement ILookup")))))))
+
 ;; =============================================================================
 ;; Channels
 
