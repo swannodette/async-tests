@@ -188,8 +188,9 @@
                   toc (do (>! c (now)) (pop cs))))))))
       c)))
 
-(defn fan-in [ins]
-  (let [c (chan)]
+(defn fan-in
+  ([ins] (fan-in (chan) ins))
+  ([c ins]
     (go (while true
           (let [[x] (alts! ins)]
             (>! c x))))
