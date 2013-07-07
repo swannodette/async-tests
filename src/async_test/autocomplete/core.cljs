@@ -103,13 +103,13 @@
   (by-id "input")
   (by-id "completions"))
 
-(go-loop
-  (println
-    (<! (:chan
+(let [c (:chan
           (selector
             (filter-chan SELECTOR_KEYS
               (map-chan #(.-keyCode %)
                 (:chan (event-chan js/window "keyup"))))
             (by-id "selector-test")
-            ["one" "two" "three"])))))
+            ["one" "two" "three"]))]
+  (go-loop
+    (println (<! c))))
 
