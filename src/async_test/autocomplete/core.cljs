@@ -77,7 +77,7 @@
     (go
       (loop [data nil cancel false]
         (let [[v sc] (alts! [hide select fetch])]
-          (condp =  sc
+          (condp = sc
             hide
             (do (set-class ac-el "hidden")
               (recur data true))
