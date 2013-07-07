@@ -148,17 +148,23 @@
     c))
 
 (defn debounce
-  ([source msecs] (debounce (chan) source msecs))
-  ([c source msecs]
+  ([source msecs]
+    (debounce (chan) source msecs))
+  ([c source msecs ]
+    (debounce c source msecs nil))
+  ([c source msecs reset]
     (go
-      (loop [cs [source]]
-        (let [toc (second cs)]
+      (when reset (<! (<! reset)))
+      (loop [cs [(or reset (chan)) source]]
+        (let [[_ _ toc] cs]
           (when-not toc (>! c (<! source)))
           (let [[v sc] (alts! cs)]
             (recur
-              (if (= sc source)
-                (conj (if-not toc cs (pop cs)) (timeout msecs))
-                (pop cs)))))))
+              (condp = sc
+                reset (do (<! v)
+                        (if toc (pop cs) cs))
+                source (conj (if-not toc cs (pop cs)) (timeout msecs))
+                toc (pop cs)))))))
     c))
 
 (defn after-last
