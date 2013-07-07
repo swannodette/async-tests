@@ -30,8 +30,8 @@
 (defn select [items idx key]
   (if (= idx ::none)
     (condp = key
-      UP_ARROW 0
-      DOWN_ARROW (dec (count items)))
+      UP_ARROW (dec (count items))
+      DOWN_ARROW 0)
     (mod (({UP_ARROW dec DOWN_ARROW inc} key) idx)
       (count items))))
 
@@ -54,7 +54,7 @@
               (= v ENTER)
               (do
                 (>! c (nth data selected))
-                (recur ::none))
+                (recur selected))
 
               :else
               (do
@@ -103,9 +103,13 @@
   (by-id "input")
   (by-id "completions"))
 
-(selector
-  (filter-chan SELECTOR_KEYS
-    (map-chan #(.-keyCode %)
-      (:chan (event-chan js/window "keyup"))))
-  (by-id "selector-test"))
+(go-loop
+  (println
+    (<! (:chan
+          (selector
+            (filter-chan SELECTOR_KEYS
+              (map-chan #(.-keyCode %)
+                (:chan (event-chan js/window "keyup"))))
+            (by-id "selector-test")
+            ["one" "two" "three"])))))
 
