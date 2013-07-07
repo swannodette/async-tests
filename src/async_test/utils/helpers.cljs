@@ -128,18 +128,13 @@
   ([source msecs]
     (throttle (chan) source msecs))
   ([c source msecs]
-    (throttle c source msecs nil))
-  ([c source msecs reset]
     (go
-      (when reset (<! (<! reset)))
-      (loop [cs [(or reset (chan)) source]]
-        (let [[_ _ sync] cs]
+      (loop [cs [source]]
+        (let [[_ sync] cs]
           (when sync (<! sync))
           (let [[v sc] (alts! cs :priority true)]
             (recur
               (condp = sc
-                reset (do (<! v)
-                        (if sync (pop cs) cs))
                 source (do (>! c v)
                          (if sync
                            cs
@@ -150,19 +145,14 @@
 (defn debounce
   ([source msecs]
     (debounce (chan) source msecs))
-  ([c source msecs ]
-    (debounce c source msecs nil))
-  ([c source msecs reset]
+  ([c source msecs]
     (go
-      (when reset (<! (<! reset)))
-      (loop [cs [(or reset (chan)) source]]
-        (let [[_ _ toc] cs]
+      (loop [cs [source]]
+        (let [[_ toc] cs]
           (when-not toc (>! c (<! source)))
           (let [[v sc] (alts! cs)]
             (recur
               (condp = sc
-                reset (do (<! v)
-                        (if toc (pop cs) cs))
                 source (conj (if-not toc cs (pop cs)) (timeout msecs))
                 toc (pop cs)))))))
     c))
@@ -171,22 +161,16 @@
   ([source msecs]
     (after-last (chan) source msecs))
   ([c source msecs]
-    (after-last c source msecs nil))
-  ([c source msecs reset]
-    (let [skip (chan)]
-      (go
-        (when reset (<! (<! reset)))
-        (loop [cs [(or reset (chan)) source]]
-          (let [[_ _ toc] cs]
-            (let [[v sc] (alts! cs :priority true)]
-              (recur
-                (condp = sc
-                  reset (do (<! v)
-                          (if toc (pop cs) cs))
-                  source (conj (if toc (pop cs) cs)
-                           (timeout msecs))
-                  toc (do (>! c (now)) (pop cs))))))))
-      c)))
+    (go
+      (loop [cs [source]]
+        (let [[_ toc] cs]
+          (let [[v sc] (alts! cs :priority true)]
+            (recur
+              (condp = sc
+                source (conj (if toc (pop cs) cs)
+                         (timeout msecs))
+                toc (do (>! c (now)) (pop cs))))))))
+    c))
 
 (defn fan-in
   ([ins] (fan-in (chan) ins))
@@ -194,4 +178,15 @@
     (go (while true
           (let [[x] (alts! ins)]
             (>! c x))))
+    c))
+
+(defn distinct-chan
+  ([source] (distinct-chan (chan) source))
+  ([c source]
+    (go
+      (loop [last ::init]
+        (let [v (<! source)]
+          (when-not (= last v)
+            (>! c v))
+          (recur v))))
     c))
