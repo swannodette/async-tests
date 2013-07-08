@@ -16,23 +16,21 @@
 
 ;; interact with database
 
-(let [c (chan)]
-  (go
-    (>! (:in cds)
-      {:op :create
-       :val {:title "Soft Machine Vol. 1" :year 1969}
-       :chan c})
-    (let [id (<! c)]
-      (println "id is:" id)
-      (>! (:in cds) {:op :read :id id :chan c})
-      (println (<! c)))))
+(go
+  (>! (:in cds)
+    {:op :create
+     :val {:title "Soft Machine Vol. 1"
+           :artist "Soft Machine"
+           :year 1969}})
+  (>! (:in cds)
+    {:op :create
+     :val {:title "Marble Index"
+           :artist "Nico"
+           :year 1969}}))
 
 ;; listen to stream of all db events
 
 (let [stream (subscribe (:events cds) (chan))]
   (go-loop
-    (println "EVENT LISTEN 1:" (<! stream))))
+    (println "EVENT LISTEN:" (<! stream))))
 
-(let [stream (subscribe (:events cds) (chan))]
-  (go-loop
-    (println "EVENT LISTEN 2:" (<! stream))))

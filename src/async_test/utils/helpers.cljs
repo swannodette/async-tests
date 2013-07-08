@@ -260,25 +260,36 @@
           (>! events e))
         (let [{:keys [op id val]} (<! in)]
           (condp = op
-            :query  (do (>! out coll)
+            :query  (do (>! out (into {} (filter f coll)))
                       (recur coll cid nil))
             :create (do (>! out cid)
-                      (recur
-                        (assoc coll cid (assoc val :id cid))
-                        (inc cid) [:create cid]))
-            :read   (do (>! out (get coll id))
-                      (recur coll cid [:read id]))
-            :update (recur (assoc coll id val) cid [:update id])
-            :delete (recur (dissoc coll id) cid [:delete id])))))
+                      (let [val (assoc val :id cid)]
+                        (recur (assoc coll cid val) (inc cid)
+                          {:op :create :val val})))
+            :read   (do (>! out (coll id))
+                      (recur coll cid
+                        {:op :read :val (coll id)}))
+            :update (recur (assoc coll id val) cid
+                      {:op :update :prev (coll id) :val val})
+            :delete (recur (dissoc coll id) cid
+                      {:op :delete :val (coll id)})))))
     {:in in
      :out out
      :events (observable events)}))
 
-#_(defn view
-  ([coll f] (view (chan) coll f))
-  ([events coll f]
-    (go
-      (>! (:in coll) {:query identity})
-      (loop [data (<! (:out col))]
-        ))
+(defn view
+  ([coll] (view (chan) coll))
+  ([events coll] (view events coll identity))
+  ([events coll f] (view events coll identity identity))
+  ([events coll f sort]
+    (let [events (subscribe (:events coll) (chan))]
+      (go
+        (>! (:in coll) {:op :query :val f})
+        (loop [data (<! (:out col))]
+          (let [[[op val] sc] (alts! [events])]
+            (condp = sc
+              :create (recur (assoc data (:id val) val)))))))
     {:events (observable events)}))
+
+(defn renderer [view strategy]
+  )
