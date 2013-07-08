@@ -26,7 +26,16 @@
     {:op :create
      :val {:title "Marble Index"
            :artist "Nico"
-           :year 1969}}))
+           :year 1969}})
+  (>! (:in cds)
+    {:op :create
+     :val {:title "Plastic Ono Band"
+           :artist "Plastic Ono Band"
+           :year 1970}})
+  (>! (:in cds)
+    {:op :query :val #(= (:title %) "Marble Index")})
+  (println "query result" (<! (:out cds)))
+  (println "query result" (<! (:out cds))))
 
 ;; listen to stream of all db events
 

@@ -252,7 +252,7 @@
 
 (defn collection
   ([] (collection (chan)
-        (chan (sliding-buffer 10)) (chan (sliding-buffer 10)) {}))
+        (chan (sliding-buffer 1)) (chan (sliding-buffer 1)) {}))
   ([in out events coll]
     (go
       (loop [coll coll cid 0 e nil]
@@ -260,7 +260,7 @@
           (>! events e))
         (let [{:keys [op id val]} (<! in)]
           (condp = op
-            :query  (do (>! out (into {} (filter f coll)))
+            :query  (do (>! out (filter val (vals coll)))
                       (recur coll cid nil))
             :create (do (>! out cid)
                       (let [val (assoc val :id cid)]
@@ -285,11 +285,34 @@
     (let [events (subscribe (:events coll) (chan))]
       (go
         (>! (:in coll) {:op :query :val f})
-        (loop [data (<! (:out col))]
+        (loop [data (<! (:out coll))]
           (let [[[op val] sc] (alts! [events])]
             (condp = sc
               :create (recur (assoc data (:id val) val)))))))
     {:events (observable events)}))
 
+;; hmm renderer could listen to debounced stream of events?
+
 (defn renderer [view strategy]
   )
+
+;; wishful thinking, or how to stop storing references and state
+;; in the DOM
+
+(declare view-chan extract)
+
+(defn edit
+  ([el id coll] (edit (chan) el id coll))
+  ([control el id coll]
+    (let [elc (view-chan el)]
+      (go
+        (loop []
+          (let [[v sc] (alts! [elc control])]
+            (condp = sc
+              control (if (= v :exit)
+                        :done
+                        (recur))
+              elc (if (= v :change)
+                    (>! (:in coll) {:op :update :id id :val (extract el)})
+                    (recur))))))
+      control)))
