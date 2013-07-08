@@ -57,4 +57,11 @@
      :compiler {:optimizations :whitespace
                 :pretty-print false
                 :static-fns true
-                :output-to "autocomplete.js"}}]})
+                :output-to "autocomplete.js"}}
+    {:id "binding"
+     :source-paths ["src/async_test/binding"
+                    "src/async_test/utils"]
+     :compiler {:optimizations :whitespace
+                :pretty-print false
+                :static-fns true
+                :output-to "main.js"}}]})

@@ -3,6 +3,7 @@
     [cljs.core.async :as async
      :refer [<! >! chan close! sliding-buffer dropping-buffer
              put! timeout]]
+    [cljs.core.async.impl.protocols :as proto]
     [goog.net.Jsonp]
     [goog.Uri])
   (:require-macros
@@ -222,3 +223,51 @@
             (>! c v))
           (recur v))))
     c))
+
+(defprotocol IObservable
+  (subscribe [c observer])
+  (unsubscribe [c observer]))
+
+(defn observable [c]
+  (let [listeners (atom #{})]
+    (go-loop
+      (put-all! @listeners (<! c)))
+    (reify
+      proto/ReadPort
+      (take! [_ fn1-handler]
+        (proto/take! c fn1-handler))
+      proto/WritePort
+      (put! [_ val fn0-handler]
+        (proto/put! c val fn0-handler))
+      proto/Channel
+      (close! [chan]
+        (proto/close! c))
+      IObservable
+      (subscribe [this observer]
+        (swap! listeners conj observer)
+        observer)
+      (unsubscribe [this observer]
+        (swap! listeners disj observer)
+        observer))))
+
+(defn collection
+  ([] (collection (chan) (chan (sliding-buffer 10)) {}))
+  ([commands events coll]
+    (go
+      (loop [coll coll cid 0 e nil]
+        (when e
+          (>! events e))
+        (let [{:keys [op id val chan]} (<! commands)]
+          (condp = op
+            :create (do
+                      (when chan (>! chan cid))
+                      (recur
+                        (assoc coll cid (assoc val :id cid))
+                        (inc cid) [:create cid]))
+            :read   (do
+                      (>! chan (get coll id))
+                      (recur coll cid [:read id]))
+            :update (recur (assoc coll id val) cid [:update id])
+            :delete (recur (dissoc coll id) cid [:delete id])))))
+    {:in commands
+     :events (observable events)}))
