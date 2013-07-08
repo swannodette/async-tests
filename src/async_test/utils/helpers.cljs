@@ -301,6 +301,7 @@
 
 (declare view-chan extract)
 
+
 (defn edit
   ([el id coll] (edit (chan) el id coll))
   ([control el id coll]
