@@ -251,22 +251,23 @@
         observer))))
 
 (defn collection
-  ([] (collection (chan)
-        (chan (sliding-buffer 1)) (chan (sliding-buffer 1)) {}))
-  ([in out events coll]
+  ([] (collection (chan) (chan (sliding-buffer 1)) {}))
+  ([in events coll]
     (go
       (loop [coll coll cid 0 e nil]
         (when e
           (>! events e))
-        (let [{:keys [op id val]} (<! in)]
+        (let [{:keys [op id val out]} (<! in)]
           (condp = op
             :query  (do (>! out (filter val (vals coll)))
                       (recur coll cid nil))
-            :create (do (>! out cid)
-                      (let [val (assoc val :id cid)]
-                        (recur (assoc coll cid val) (inc cid)
-                          {:op :create :val val})))
-            :read   (do (>! out (coll id))
+            :create (let [val (assoc val :id cid)]
+                      (when out
+                        (>! out val))
+                      (recur (assoc coll cid val) (inc cid)
+                        {:op :create :val val}))
+            :read   (do (when out
+                          (>! out (coll id)))
                       (recur coll cid
                         {:op :read :val (coll id)}))
             :update (recur (assoc coll id val) cid
@@ -274,7 +275,6 @@
             :delete (recur (dissoc coll id) cid
                       {:op :delete :val (coll id)})))))
     {:in in
-     :out out
      :events (observable events)}))
 
 (defn view
