@@ -21,18 +21,18 @@
     (>! (:in cds)
       {:op :create
         :val {:title "Soft Machine Vol. 1"
-               :artist "Soft Machine"
-               :year 1969}})
+              :artist "Soft Machine"
+              :year 1969}})
     (>! (:in cds)
       {:op :create
         :val {:title "Marble Index"
-               :artist "Nico"
-               :year 1969}})
+              :artist "Nico"
+              :year 1969}})
     (>! (:in cds)
       {:op :create
         :val {:title "Plastic Ono Band"
-               :artist "Plastic Ono Band"
-               :year 1970}})
+              :artist "Plastic Ono Band"
+              :year 1970}})
     (>! (:in cds)
       {:op :query
        :val #(= (:title %) "Marble Index")
