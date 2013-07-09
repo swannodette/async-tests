@@ -46,14 +46,8 @@
                 items  (by-tag-name list-el "li")]
             (cond
               (= control sc)
-              (condp = v
-                :clear
-                (do
-                  (when (number? selected)
-                    (clear-class (nth items selected)))
-                  (recur ::none))
-                :exit :done)
-            
+              :done
+
               (= v ENTER)
               (do
                 (>! c (nth data selected))
