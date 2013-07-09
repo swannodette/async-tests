@@ -69,4 +69,11 @@
      :compiler {:optimizations :whitespace
                 :pretty-print false
                 :static-fns true
-                :output-to "binding.js"}}]})
+                :output-to "binding.js"}}
+    {:id "timers"
+     :source-paths ["src/async_test/timers"
+                    "src/async_test/utils"]
+     :compiler {:optimizations :whitespace
+                :pretty-print false
+                :static-fns true
+                :output-to "timers.js"}}]})
