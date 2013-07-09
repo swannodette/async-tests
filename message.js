@@ -6,9 +6,9 @@
 
 // setTimeout
 
-var task_count = 100000,
+var task_count = 1000000,
     cur_channel = 0;
-    max_channels = 1000,
+    max_channels = 1,
     channels = Array(max_channels);
 
 function Channel() {
@@ -42,12 +42,13 @@ var counter = 0,
 var inc = function() {
   counter++;
   if(counter == task_count) {
-    console.log("task time:", (new Date()-s));
+    document.getElementById("completion").innerHTML = "task time: " + (new Date()-s);
   }
 };
 
 for(var i = 0; i < task_count; i++) {
-  next_tick(inc, 0);
+  //next_tick(inc);
+  setTimeout(inc, 0);
 }
 
-console.log("channel dispatch time:", (new Date())-s);
+document.getElementById("dispatch").innerHTML = "channel dispatch time: " + (new Date()-s);
