@@ -45,21 +45,14 @@
           (let [[v sc] (alts! [key-chan control])
                 items  (by-tag-name list-el "li")]
             (cond
-              (= control sc)
-              :done
-
-              (= v ENTER)
-              (do
-                (>! c (nth data selected))
-                (recur selected))
-
-              :else
-              (do
-                (when (number? selected)
-                  (clear-class (nth items selected)))
-                (let [n (select items selected v)]
-                  (set-class (nth items n) "selected")
-                  (recur n)))))))
+              (= control sc) :done
+              (= v ENTER) (do (>! c (nth data selected))
+                            (recur selected))
+              :else (do (when (number? selected)
+                          (clear-class (nth items selected)))
+                      (let [n (select items selected v)]
+                        (set-class (nth items n) "selected")
+                        (recur n)))))))
       {:chan c
        :control control})))
 
