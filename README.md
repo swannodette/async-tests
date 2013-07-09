@@ -24,8 +24,6 @@ You can see `project.clj` for the names of the different examples. All
 of the examples can be run after building by opening
 `NAME.html`.
 
-For the `autocomplete` example 
-
 ## Contributions
 
 I'm not taking pull requests for this project. It's a personal
