@@ -85,8 +85,8 @@
                    {selector :chan control :control} (selector arrows ac-el data)
                    [v sc] (alts! [selector hide])]
                 (when (= sc selector)
-                  (aset input-el "value" v)
-                  (>! control :exit))
+                  (aset input-el "value" v))
+                (>! control :exit)
                 (set-class ac-el "hidden")
                 (<! select)
                 (recur data true))
