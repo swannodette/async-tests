@@ -27,8 +27,8 @@ of the examples can be run after building by opening
 ## Contributions
 
 I'm not taking pull requests for this project. It's a personal
-core.async playground. While I hope people find some of these examples
-informative that is not the primary goal.
+core.async playground. Still, I hope people find some of these examples
+informative!
 
 ## License
 
