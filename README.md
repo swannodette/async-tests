@@ -20,6 +20,13 @@ with:
 lein cljsbuild once NAME
 ```
 
+Or if you want to modify the examples try the following for
+faster builds:
+
+```
+lein cljsbuild auto NAME
+```
+
 You can see `project.clj` for the names of the different examples. All
 of the examples can be run after building by opening
 `NAME.html`.
