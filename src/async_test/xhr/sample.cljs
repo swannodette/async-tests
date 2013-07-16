@@ -31,9 +31,14 @@
   (let [button (by-id "more")
         clicks (:chan (event-chan button "click"))
         table (by-id "bills")]
+    (set-html button "Show 9 Rows")
     (go
       (<! clicks)
       (set-html button "Next 9 Rows")
-      (show-page clicks (xhr/request-records "/bills.json")))))
+      (let [req (xhr/request-records "/xhr.json")]
+        (xhr/error! req (fn [e]
+                          (set-html table (str "<tr><td>Request Error:" e "</td></tr>"))
+                          (init-page)))
+        (show-page clicks req)))))
 
 (init-page)

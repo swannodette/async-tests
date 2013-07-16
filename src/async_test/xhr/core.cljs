@@ -66,8 +66,7 @@
     (if (.isSuccess e/target)
       (put! body (read-response e/target))
       (put! err (or (read-response e/target) "error")))
-    (async/close! body)
-    (async/close! err)))
+    (async/close! body)))
 
 (defn- map->obj [m]
   (reduce (fn [obj [k v]] (aset obj (name k) v) obj)
