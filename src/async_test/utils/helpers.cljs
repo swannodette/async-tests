@@ -5,7 +5,8 @@
              put! timeout]]
     [cljs.core.async.impl.protocols :as proto]
     [goog.net.Jsonp]
-    [goog.Uri])
+    [goog.Uri]
+    [goog.dom :as dom])
   (:require-macros
     [cljs.core.async.macros :as m :refer [go alt!]]
     [async-test.utils.macros :refer [go-loop]]))
@@ -38,7 +39,7 @@
 (defn now []
   (.valueOf (js/Date.)))
 
-(defn by-id [id] (.getElementById js/document id))
+(defn by-id [id] (dom/getElement id))
 
 (defn set-html [el s]
   (aset el "innerHTML" s))
@@ -54,6 +55,19 @@
 
 (defn by-tag-name [el tag]
   (.getElementsByTagName el tag))
+
+(defn tag-match [tag]
+  (fn [el]
+    (when-let [tag-name (.-tagName el)]
+      (= tag (.toLowerCase tag-name)))))
+
+(defn index-of [node-list el]
+  (loop [i 0]
+    (if (< i (alength node-list))
+      (if (identical? (aget node-list i) el)
+        i
+        (recur (inc i)))
+      -1)))
 
 ;; DO NOT DO THIS IN LIBRARIES
 

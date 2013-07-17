@@ -7,7 +7,8 @@
              :refer [event-chan by-id copy-chan set-class throttle
                      clear-class jsonp-chan set-html now multiplex
                      map-chan filter-chan fan-in distinct-chan
-                     by-tag-name]])
+                     by-tag-name tag-match index-of]]
+            [goog.dom :as dom])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
 
@@ -35,6 +36,9 @@
     (mod (({UP_ARROW dec DOWN_ARROW inc} key) idx)
       (count items))))
 
+;; fan-in mouse & keys, get message :inc, :dec, :set
+;; only need it when selector appears
+
 (defn selector
   ([key-chan list-el data]
     (selector (chan) key-chan list-el data))
@@ -55,6 +59,39 @@
                         (recur n)))))))
       {:chan c
        :control control})))
+
+#_(let [el (by-id "test")
+      c (selector
+           (fan-in
+             [(:chan (event-chan el "mouseover"))
+              (->> (:chan (event-chan js/window "keydown"))
+                (map-chan #(.-keyCode %))
+                (filter-chan SELECTOR_KEYS))])
+           (by-id "test")
+           ["one" "two" "three"])]
+  (go-loop
+    (.log js/console (<! (:chan c)))))
+
+(let [li-match (tag-match "li")
+      el (by-id "test")
+      lis (by-tag-name el "li")
+      c  (->> (:chan (event-chan el "mouseover"))
+           (map-chan
+             (fn [e]
+               (let [target (.-target e)]
+                 (if (li-match target)
+                   target
+                   (dom/getAncestor target li-match)))))
+           (filter-chan identity)
+           (distinct-chan)
+           (map-chan
+             #(index-of lis %)))]
+  (go-loop
+    (.log js/console (<! c))))
+
+(comment
+  #(.toLowerCase (.. % -target -tagName))
+  )
 
 (defn autocompleter*
   [{c :chan arrows :arrows blur :blur} input-el ac-el]
@@ -104,7 +141,7 @@
               :blur   (:chan (event-chan input-el "blur"))}]
     {:chan (autocompleter* ctrl input-el ac-el)}))
 
-(autocompleter
+#_(autocompleter
   (by-id "input")
   (by-id "completions"))
 
