@@ -6,7 +6,7 @@
             [async-test.utils.helpers
              :refer [event-chan by-id copy-chan set-class throttle
                      clear-class jsonp-chan set-html now multiplex
-                     map-chan filter-chan fan-in distinct-chan
+                     map-chan filter-chan remove-chan fan-in distinct-chan
                      by-tag-name tag-match index-of]]
             [goog.dom :as dom])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
@@ -62,30 +62,49 @@
 
 #_(let [el (by-id "test")
       c (selector
-           (fan-in
-             [(:chan (event-chan el "mouseover"))
+          (fan-in
+            [(->> (:chan (event-chan el "mouseover"))
+               (map-chan
+                 #(let [target (.-target %)]
+                    (if (li-match target)
+                      target
+                      (dom/getAncestor target li-match))))
+               (filter-chan identity)
+               (distinct-chan)
+               (map-chan
+                 #(index-of lis %)))
               (->> (:chan (event-chan js/window "keydown"))
                 (map-chan #(.-keyCode %))
-                (filter-chan SELECTOR_KEYS))])
+                (filter-chan SELECTOR_KEYS)
+                (map-chan
+                  #(case %
+                     UP_ARROW :up
+                     :down)))])
            (by-id "test")
            ["one" "two" "three"])]
   (go-loop
     (.log js/console (<! (:chan c)))))
 
-(let [li-match (tag-match "li")
-      el (by-id "test")
-      lis (by-tag-name el "li")
-      c  (->> (:chan (event-chan el "mouseover"))
-           (map-chan
-             (fn [e]
-               (let [target (.-target e)]
-                 (if (li-match target)
-                   target
-                   (dom/getAncestor target li-match)))))
-           (filter-chan identity)
-           (distinct-chan)
-           (map-chan
-             #(index-of lis %)))]
+(defn hover-chan [el tag]
+  (let [matcher (tag-match tag)
+        matches (by-tag-name el tag)
+        mc      (event-chan el "mouseover")]
+    {:chan (->> (:chan mc)
+             (map-chan
+               #(let [target (.-target %)]
+                  (if (matcher target)
+                    target
+                    (if-let [el (dom/getAncestor target matcher)]
+                      el
+                      :no-match))))
+             (remove-chan keyword?)
+             (distinct-chan)
+             (map-chan
+               #(index-of matches %)))
+     :unsubscribe (:unsubscribe mc)}))
+
+(let [el (by-id "test")
+      c  (:chan (hover-chan el "li"))]
   (go-loop
     (.log js/console (<! c))))
 

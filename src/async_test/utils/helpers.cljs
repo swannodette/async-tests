@@ -139,6 +139,15 @@
           (>! c v))))
     c))
 
+(defn remove-chan
+  ([f source] (remove-chan (chan) f source))
+  ([c f source]
+    (go-loop
+      (let [v (<! source)]
+        (when-not (f v)
+          (>! c v))))
+    c))
+
 (defn jsonp-chan
   ([uri] (jsonp-chan (chan) uri))
   ([c uri]
