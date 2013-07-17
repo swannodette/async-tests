@@ -3,11 +3,8 @@
              :refer [<! >! chan close! put! take! sliding-buffer
                      dropping-buffer timeout]]
             [clojure.string :as string]
-            [async-test.utils.helpers
-             :refer [event-chan by-id copy-chan set-class throttle
-                     clear-class jsonp-chan set-html now multiplex
-                     map-chan filter-chan remove-chan fan-in distinct-chan
-                     by-tag-name tag-match index-of]]
+            [async-test.utils.helpers :as h]
+            [async-test.utils.reactive :as r]
             [goog.dom :as dom])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [async-test.utils.macros :refer [go-loop]]))
@@ -21,12 +18,12 @@
   "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")
 
 (defn show-results [r]
-  (let [rs (by-id "completions")
-        _  (clear-class rs)
+  (let [rs (h/by-id "completions")
+        _  (h/clear-class rs)
         xs (nth r 1)]
     (->> (for [x xs] (str "<li>" x "</li>"))
       (apply str)
-      (set-html rs))))
+      (h/set-html rs))))
 
 (defn select [items idx key]
   (if (= idx ::none)
@@ -47,117 +44,88 @@
       (go
         (loop [selected ::none]
           (let [[v sc] (alts! [key-chan control])
-                items  (by-tag-name list-el "li")]
+                items  (h/by-tag-name list-el "li")]
             (cond
               (= control sc) :done
               (= v ENTER) (do (>! c (nth data selected))
                             (recur selected))
               :else (do (when (number? selected)
-                          (clear-class (nth items selected)))
+                          (h/clear-class (nth items selected)))
                       (let [n (select items selected v)]
-                        (set-class (nth items n) "selected")
+                        (h/set-class (nth items n) "selected")
                         (recur n)))))))
       {:chan c
        :control control})))
 
-#_(let [el (by-id "test")
-      c (selector
-          (fan-in
-            [(->> (:chan (event-chan el "mouseover"))
-               (map-chan
-                 #(let [target (.-target %)]
-                    (if (li-match target)
-                      target
-                      (dom/getAncestor target li-match))))
-               (filter-chan identity)
-               (distinct-chan)
-               (map-chan
-                 #(index-of lis %)))
-              (->> (:chan (event-chan js/window "keydown"))
-                (map-chan #(.-keyCode %))
-                (filter-chan SELECTOR_KEYS)
-                (map-chan
-                  #(case %
-                     UP_ARROW :up
-                     :down)))])
-           (by-id "test")
-           ["one" "two" "three"])]
-  (go-loop
-    (.log js/console (<! (:chan c)))))
-
 (defn hover-chan [el tag]
-  (let [matcher (tag-match tag)
-        matches (by-tag-name el tag)
-        mc      (event-chan el "mouseover")]
+  (let [matcher (h/tag-match tag)
+        matches (h/by-tag-name el tag)
+        mc      (r/events el "mouseover")]
     {:chan (->> (:chan mc)
-             (map-chan
+             (r/map
                #(let [target (.-target %)]
                   (if (matcher target)
                     target
                     (if-let [el (dom/getAncestor target matcher)]
                       el
                       :no-match))))
-             (remove-chan keyword?)
-             (distinct-chan)
-             (map-chan
-               #(index-of matches %)))
+             (r/remove keyword?)
+             (r/distinct)
+             (r/map
+               #(h/index-of matches %)))
      :unsubscribe (:unsubscribe mc)}))
 
-(let [el (by-id "test")
+(let [el (h/by-id "test")
       c  (:chan (hover-chan el "li"))]
   (go-loop
     (.log js/console (<! c))))
 
-(comment
-  #(.toLowerCase (.. % -target -tagName))
-  )
-
 (defn autocompleter*
   [{c :chan arrows :arrows blur :blur} input-el ac-el]
   (let [ac (chan)
-        [c' c''] (multiplex c 2)
-        hide     (fan-in [(filter-chan string/blank? c') blur])
-        fetch    (throttle (filter-chan #(> (count %) 2) c'') 500)
-        [select arrows] (multiplex arrows
+        [c' c''] (r/multiplex c 2)
+        hide     (r/fan-in [(r/filter string/blank? c') blur])
+        fetch    (r/throttle (r/filter #(> (count %) 2) c'') 500)
+        [select arrows] (r/multiplex arrows
                           [(chan (dropping-buffer 1)) (chan)])]
     (go
       (loop [data nil cancel false]
         (let [[v sc] (alts! [hide select fetch])]
           (condp = sc
             hide
-            (do (set-class ac-el "hidden")
+            (do (h/set-class ac-el "hidden")
               (recur data true))
 
             select
             (if data
-              (let [_ (>! select (now))
+              (let [_ (>! select (r/now))
                    {selector :chan control :control} (selector arrows ac-el data)
                    [v sc] (alts! [selector hide])]
                 (when (= sc selector)
                   (aset input-el "value" v))
                 (>! control :exit)
-                (set-class ac-el "hidden")
+                (h/set-class ac-el "hidden")
                 (<! select)
                 (recur data true))
               (recur data true))
 
             fetch
             (if-not cancel
-              (let [res (<! (jsonp-chan (str base-url v)))]
+              (let [res (<! (r/jsonp (str base-url v)))]
                 (show-results res)
                 (recur (nth res 1) false))
               (recur data false))))))
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [raw   (event-chan input-el "keydown")
-        codes (map-chan #(.-keyCode %) (:chan raw))
-        [keys' keys''] (multiplex codes 2)
-        ctrl {:chan   (distinct-chan
-                        (map-chan #(do % (.-value input-el))
+  (let [raw   (r/events input-el "keydown")
+        codes (r/map #(.-keyCode %) (:chan raw))
+        [keys' keys''] (r/multiplex codes 2)
+        ctrl {:chan   (r/distinct
+                        (r/map #(do % (.-value input-el))
                           keys'))
-              :arrows (filter-chan SELECTOR_KEYS keys'')
-              :blur   (:chan (event-chan input-el "blur"))}]
+              :arrows (r/filter SELECTOR_KEYS keys'')
+              :blur   (:chan (r/events input-el "blur"))}]
     {:chan (autocompleter* ctrl input-el ac-el)}))
 
 #_(autocompleter
