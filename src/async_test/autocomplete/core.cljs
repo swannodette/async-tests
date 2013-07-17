@@ -94,7 +94,7 @@
     ac))
 
 (defn autocompleter [input-el ac-el]
-  (let [raw   (event-chan input-el "keyup")
+  (let [raw   (event-chan input-el "keydown")
         codes (map-chan #(.-keyCode %) (:chan raw))
         [keys' keys''] (multiplex codes 2)
         ctrl {:chan   (distinct-chan
