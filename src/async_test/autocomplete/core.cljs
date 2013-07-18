@@ -40,7 +40,7 @@
   (condp = code
     UP_ARROW :up
     DOWN_ARROW :down
-    ENTER :enter))
+    ENTER :select))
 
 (defn selector
   ([in list-el data]
@@ -53,8 +53,8 @@
                 items  (h/by-tag-name list-el "li")]
             (cond
               (= control sc) :done
-              (= v :enter) (do (>! c (nth data selected))
-                            (recur selected))
+              (= v :select) (do (>! c (nth data selected))
+                              (recur selected))
               :else (do (when (number? selected)
                           (h/clear-class (nth items selected)))
                       (if (= v :out)
@@ -66,12 +66,14 @@
        :control control})))
 
 (let [el (h/by-id "test")
-      hover (r/hover-chan el "li")
+      hover (:chan (r/hover-chan el "li"))
       keys (->> (:chan (r/events js/window "keydown"))
              (r/map key-event->keycode)
              (r/filter SELECTOR_KEYS)
              (r/map selector-key->keyword))
-      c  (r/fan-in [(:chan hover) keys])
+      click (->> (:chan (r/events el "click"))
+              (r/map #(do :select)))
+      c  (r/fan-in [hover keys click])
       sc (:chan (selector c el ["one" "two" "three"]))]
   (go-loop
     (.log js/console (<! sc))))
