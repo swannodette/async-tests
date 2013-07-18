@@ -22,6 +22,12 @@
                 :pretty-print false
                 :static-fns true
                 :output-to "mouse.js"}}
+    {:id "daisy"
+     :source-paths ["src/async_test/daisy"
+                    "src/async_test/utils"]
+     :compiler {:optimizations :advanced
+                :pretty-print false
+                :output-to "daisy.js"}}
     {:id "timeout"
      :source-paths ["src/async_test/timeout"
                     "src/async_test/utils"]
@@ -50,12 +56,6 @@
                 :pretty-print false
                 :static-fns true
                 :output-to "robpike.js"}}
-    {:id "bench"
-     :source-paths ["src/async_test/bench"]
-     :compiler {:optimizations :whitespace
-                :pretty-print false
-                :static-fns true
-                :output-to "main.js"}}
     {:id "autocomplete"
      :source-paths ["src/async_test/autocomplete"
                     "src/async_test/utils"]
