@@ -57,26 +57,8 @@
       {:chan c
        :control control})))
 
-(defn hover-chan [el tag]
-  (let [matcher (h/tag-match tag)
-        matches (h/by-tag-name el tag)
-        mc      (r/events el "mouseover")]
-    {:chan (->> (:chan mc)
-             (r/map
-               #(let [target (.-target %)]
-                  (if (matcher target)
-                    target
-                    (if-let [el (dom/getAncestor target matcher)]
-                      el
-                      :no-match))))
-             (r/remove keyword?)
-             (r/distinct)
-             (r/map
-               #(h/index-of matches %)))
-     :unsubscribe (:unsubscribe mc)}))
-
 (let [el (h/by-id "test")
-      c  (:chan (hover-chan el "li"))]
+      c  (:chan (r/hover-chan el "li"))]
   (go-loop
     (.log js/console (<! c))))
 

@@ -5,6 +5,7 @@
      :refer [<! >! chan close! sliding-buffer dropping-buffer
              put! timeout]]
     [cljs.core.async.impl.protocols :as proto]
+    [async-test.utils.helpers :as h]
     [goog.net.Jsonp]
     [goog.Uri]
     [goog.dom :as dom])
@@ -170,6 +171,24 @@
             (>! c v))
           (recur v))))
     c))
+
+(defn hover-chan [el tag]
+  (let [matcher (h/tag-match tag)
+        matches (h/by-tag-name el tag)
+        mc      (events el "mouseover")]
+    {:chan (->> (:chan mc)
+             (map
+               #(let [target (.-target %)]
+                  (if (matcher target)
+                    target
+                    (if-let [el (dom/getAncestor target matcher)]
+                      el
+                      :no-match))))
+             (remove keyword?)
+             (distinct)
+             (map
+               #(h/index-of matches %)))
+     :unsubscribe (:unsubscribe mc)}))
 
 (defprotocol IObservable
   (subscribe [c observer])
