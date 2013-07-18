@@ -28,39 +28,53 @@
 (defn select [items idx key]
   (if (= idx ::none)
     (condp = key
-      UP_ARROW (dec (count items))
-      DOWN_ARROW 0)
-    (mod (({UP_ARROW dec DOWN_ARROW inc} key) idx)
+      :up (dec (count items))
+      :down 0)
+    (mod (({:up dec :down inc} key) idx)
       (count items))))
 
-;; fan-in mouse & keys, get message :inc, :dec, :set
-;; only need it when selector appears
+(defn key-event->keycode [e]
+  (.-keyCode e))
+
+(defn selector-key->keyword [code]
+  (condp = code
+    UP_ARROW :up
+    DOWN_ARROW :down
+    ENTER :enter))
 
 (defn selector
-  ([key-chan list-el data]
-    (selector (chan) key-chan list-el data))
-  ([c key-chan list-el data]
+  ([in list-el data]
+    (selector (chan) in list-el data))
+  ([c in list-el data]
     (let [control (chan)]
       (go
         (loop [selected ::none]
-          (let [[v sc] (alts! [key-chan control])
+          (let [[v sc] (alts! [in control])
                 items  (h/by-tag-name list-el "li")]
             (cond
               (= control sc) :done
-              (= v ENTER) (do (>! c (nth data selected))
+              (= v :enter) (do (>! c (nth data selected))
                             (recur selected))
               :else (do (when (number? selected)
                           (h/clear-class (nth items selected)))
-                      (let [n (select items selected v)]
-                        (h/set-class (nth items n) "selected")
-                        (recur n)))))))
+                      (if (= v :out)
+                        (recur ::none)
+                        (let [n (if (number? v) v (select items selected v))]
+                          (h/set-class (nth items n) "selected")
+                          (recur n))))))))
       {:chan c
        :control control})))
 
 (let [el (h/by-id "test")
-      c  (:chan (r/hover-chan el "li"))]
+      hover (r/hover-chan el "li")
+      keys (->> (:chan (r/events js/window "keydown"))
+             (r/map key-event->keycode)
+             (r/filter SELECTOR_KEYS)
+             (r/map selector-key->keyword))
+      c  (r/fan-in [(:chan hover) keys])
+      sc (:chan (selector c el ["one" "two" "three"]))]
   (go-loop
-    (.log js/console (<! c))))
+    (.log js/console (<! sc))))
 
 (defn autocompleter*
   [{c :chan arrows :arrows blur :blur} input-el ac-el]
