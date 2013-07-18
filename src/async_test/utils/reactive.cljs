@@ -175,20 +175,29 @@
 (defn hover-chan [el tag]
   (let [matcher (h/tag-match tag)
         matches (h/by-tag-name el tag)
-        mc      (events el "mouseover")]
-    {:chan (->> (:chan mc)
-             (map
-               #(let [target (.-target %)]
-                  (if (matcher target)
-                    target
-                    (if-let [el (dom/getAncestor target matcher)]
-                      el
-                      :no-match))))
-             (remove keyword?)
-             (distinct)
-             (map
-               #(h/index-of matches %)))
-     :unsubscribe (:unsubscribe mc)}))
+        raw-over (events el "mouseover")
+        raw-out (events el "mouseout")
+        over (->> (:chan raw-over)
+               (map
+                 #(let [target (.-target %)]
+                    (if (matcher target)
+                      target
+                      (if-let [el (dom/getAncestor target matcher)]
+                        el
+                        :no-match))))
+               (map
+                 #(h/index-of matches %)))
+        out (->> (:chan raw-out)
+              (filter
+                (fn [e]
+                  (and (matcher (.-target e))
+                       (not (matcher (.-relatedTarget e))))))
+              (map #(do :out)))]
+    {:chan (distinct (fan-in [over out]))
+     :unsubscribe
+      #(do
+         ((:unsubscribe raw-over))
+         ((:unsubscribe raw-out)))}))
 
 (defprotocol IObservable
   (subscribe [c observer])
