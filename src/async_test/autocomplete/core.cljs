@@ -43,6 +43,11 @@
     ENTER :select))
 
 (defn selector
+  "Creates a selection process on list-el, a HTML list element. in is
+   a channel that should produce a number for the item to highlight,
+   :out to remove all highlighting, and :select to trigger writing out
+   the value in data at the selected index. Returns a map of the
+   output channel and control channel to kill the selector process."
   ([in list-el data]
     (selector (chan) in list-el data))
   ([c in list-el data]
