@@ -6,34 +6,21 @@
 
 // setTimeout
 
-var task_count = 1000000,
-    cur_channel = 0;
-    max_channels = 1,
-    channels = Array(max_channels);
+var task_count = 100000,
+    taskq = [];
+    c = new MessageChannel();
 
-function Channel() {
-  this.tasks = [];
-  this.c = new MessageChannel();
-
-  var self = this;
-
-  this.c.port1.onmessage = function(msg) {
-    self.tasks.shift()();
-  };
-}
-
-Channel.prototype.add_task = function(f) {
-  this.tasks.push(f);
+c.port1.onmessage = function(msg) {
+  taskq.shift()();
 };
 
-for(var i = 0; i < max_channels; i++) {
-  channels[i] = new Channel();
-}
+var add_task = function(f) {
+  taskq.push(f);
+};
 
 var next_tick = function(f) {
-  channels[cur_channel].add_task(f);
-  channels[cur_channel].c.port2.postMessage(0);
-  cur_channel = (cur_channel + 1) % max_channels;
+  add_task(f);
+  c.port2.postMessage(0);
 };
 
 var counter = 0,
@@ -47,8 +34,8 @@ var inc = function() {
 };
 
 for(var i = 0; i < task_count; i++) {
-  //next_tick(inc);
-  setTimeout(inc, 0);
+  next_tick(inc);
+  //setTimeout(inc, 0);
 }
 
 document.getElementById("dispatch").innerHTML = "channel dispatch time: " + (new Date()-s);

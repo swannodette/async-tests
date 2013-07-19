@@ -6,7 +6,7 @@
   (go (>! left (inc (<! right)))))
 
 (let [leftmost (chan)
-      rightmost (loop [n 1000 left leftmost]
+      rightmost (loop [n 100000 left leftmost]
                   (if-not (pos? n)
                     left
                     (let [right (chan)]

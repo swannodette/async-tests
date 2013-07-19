@@ -25,8 +25,9 @@
     {:id "daisy"
      :source-paths ["src/async_test/daisy"
                     "src/async_test/utils"]
-     :compiler {:optimizations :advanced
+     :compiler {:optimizations :whitespace
                 :pretty-print false
+                :static-fns true
                 :output-to "daisy.js"}}
     {:id "timeout"
      :source-paths ["src/async_test/timeout"
