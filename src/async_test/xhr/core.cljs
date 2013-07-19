@@ -12,33 +12,7 @@
     [cljs.core.async.macros :as m :refer [go]]))
 
 
-(defprotocol Cancel
-  (cancel [this]))
-
-(defprotocol Chain
-  (chain [this ok-f] [this ok-f err-f])
-  (chaincat [this ok-f]))
-
-(defprotocol ReadError
-  (error! [this f]))
-
-(declare ->Request)
-
-(defrecord Request [req data err]
-  Cancel
-  (cancel [_] (cancel req))
-
-  Chain
-  (chain [_ ok-f] (->Request req (chan/map ok-f data) err))
-  (chain [_ ok-f err-f] (->Request req
-                                   (chan/map ok-f data)
-                                   (chan/map err-f err)))
-  (chaincat [_ f] (->Request req (chan/mapcat f data) err))
-
-  ReadError
-  (error! [this f]
-    (async/take! err f))
-
+(defrecord Request [xhr data err]
   async-proto/ReadPort
   (take! [this f]
     (async/take! data (async-proto/commit f)))
@@ -48,24 +22,46 @@
     (async/close! err)
     (async/close! data)))
 
+(defn cancel [req]
+  (when (.isActive (:xhr req))
+    (.abort (:xhr req))))
+
+(defn on-error! [req f]
+  (async/take! (:err req) f))
+
+(defn chain
+  ([req ok-f]
+   (->Request (:xhr req) (chan/map ok-f (:data req)) (:err req)))
+  ([req ok-f err-f]
+   (->Request (:xhr req)
+              (chan/map ok-f (:data req))
+              (chan/map err-f (:err req)))))
+
+(defn chain* [req ok-f err-f]
+  (let [err (chan 1)
+        recover (chan)]
+    (on-error! req #(put! err %))
+    (->Request (:xhr req)
+               (go (alts! [(chan/map (fn [data] (ok-f data err)) (:data req))
+                           recover]))
+               (chan/map (fn [data] (err-f data recover)) err))))
+
+(defn chaincat [req f]
+  (->Request (:xhr req) (chan/mapcat f (:data req)) (:err req)))
+
+
+; Build Request ----------------------------------------------------------------
+
 (def method-map {:get "GET" :put "PUT" :post "POST" :patch "PATCH" :delete "DELETE"})
 
 (def ^:private
   *xhr-manager*
   (goog.net.XhrManager. nil (js-obj "accept" "text/edn") nil nil 5000))
 
-(defn- read-response [response]
-  (let [body (.getResponseText response)]
-    (cond
-      (empty? body) nil
-      (string? body) (js->clj (.parse js/JSON body))
-      :else body)))
-
 (defn- handle-response [body err]
   (fn [e]
-    (if (.isSuccess e/target)
-      (put! body (read-response e/target))
-      (put! err (or (read-response e/target) "error")))
+    (put! (if (.isSuccess e/target) body err)
+          (.getResponseText e/target))
     (async/close! body)))
 
 (defn- map->obj [m]
@@ -73,7 +69,7 @@
             (js-obj)
             m))
 
-(defn request-body
+(defn request
   "Asynchronously make a network request for the resource at url.  The
    entry for `:event` contains an instance of the `goog.net.XhrManager.Event`.
 
@@ -82,29 +78,39 @@
    defaults to `0`. `:timout` may be a number of milliseconds or a timeout channel.
 
    Returns a cancelable Request object with separate data and err channels"
-  [url & {:keys [method body headers priority retries id timeout]
-          :or   {method   :get
-                 retries  0}}]
+  [url {:keys [method body headers priority retries id timeout]
+        :or   {method   :get
+               retries  0}}]
   (let [body (chan 1) err (chan 1)]
-    (when-let [req (.send *xhr-manager*
-                        id
-                        url
-                        (method-map method)
-                        body
-                        (map->obj headers)
-                        priority
-                        (handle-response body err)
-                        retries)]
-      (when timeout
-        (let [timeout (if (number? timeout) (async/timeout timeout) timeout)]
-          (async/take! timeout (fn [] (cancel req))))) ; <- should cause a failure response...?
-      (->Request req body err))))
+    (when-let [xhr (.send *xhr-manager*
+                          id
+                          url
+                          (method-map method)
+                          body
+                          (map->obj headers)
+                          priority
+                          (handle-response body err)
+                          retries)]
+      (let [req (->Request xhr body err)]
+        (when timeout
+          (let [timeout (if (number? timeout) (async/timeout timeout) timeout)]
+            (async/take! timeout (fn [] (cancel req)))))
+        req))))
 
-; This technique seems to be quite slow.
-(defn request-records [& args]
-  (-> (apply request-body args)
-      (chaincat (fn [data]
-                  (if (sequential? data)
-                    data
-                    [data])))))
+; Process Response
+
+(defn ->json [req]
+  (chain* req
+          (fn [body err]
+            (try
+              (js->clj (.parse js/JSON body))
+              (catch js/Error e
+                (put! err e))))
+          (fn [err recover]
+            (if (string? err)
+              (try
+                (js->clj (.parse js/JSON err))
+                (catch js/Error e
+                  e))
+              err))))
 

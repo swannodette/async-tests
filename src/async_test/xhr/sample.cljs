@@ -12,20 +12,21 @@
     (str "<tr><td>" (get bill "bill_number") "</td>"
          "<td>" (get bill "title") "</td></tr>")))
 
-(defn show-page [clicks req]
+(defn pages [req]
+  (ch/mapcat #(partition-all 9 %) req))
+
+(defn show-page [clicks pages]
   (go
-    (let [page (ch/take 9 req)
-          html (loop [rows [] row (<! page)]
-                 (if row
-                   (recur (conj rows (row-data row)) (<! page))
-                   (when (seq rows)
-                     (when (> 9 (count rows))
-                       (set-class (by-id "more") "hidden"))
-                     (apply str rows))))]
-      (when html
+    (let [page (<! pages)
+          rows (for [row page]
+                 (row-data row))
+          html (apply str rows)]
+      (when (> 9 (count rows))
+        (set-class (by-id "more") "hidden"))
+      (when (seq rows)
         (set-html (by-id "bills") html)
         (<! clicks)
-        (show-page clicks req)))))
+        (show-page clicks pages)))))
 
 (defn init-page []
   (let [button (by-id "more")
@@ -35,10 +36,10 @@
     (go
       (<! clicks)
       (set-html button "Next 9 Rows")
-      (let [req (xhr/request-records "/xhr.json")]
+      (let [req (xhr/->json (xhr/request "/xhr.json" {}))]
         (xhr/error! req (fn [e]
                           (set-html table (str "<tr><td>Request Error:" e "</td></tr>"))
                           (init-page)))
-        (show-page clicks req)))))
+        (show-page clicks (pages req))))))
 
 (init-page)
