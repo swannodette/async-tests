@@ -9,11 +9,7 @@ convenient location. `cd` into the repo and run `lein install`.
 
 Then clone this repo into a convenient location and `cd` into it.
 
-The examples need ClojureScript from master as it contains a bugfix.
-Clone [Clojurescript](http://github.com/clojure/clojurescript) into
-the directory follow this [guide](https://github.com/emezeske/lein-cljsbuild/wiki/Using-a-Git-Checkout-of-the-ClojureScript-Compiler) for more details.
-
-You can now build all of the examples from the project directory
+You can build all of the examples from the project directory
 with:
 
 ```
