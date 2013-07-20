@@ -42,8 +42,8 @@
         recover (chan)]
     (on-error! req #(put! err %))
     (->Request (:xhr req)
-               (go (alts! [(chan/map (fn [data] (ok-f data err)) (:data req))
-                           recover]))
+               (go (first (alts! [(chan/map (fn [data] (ok-f data err)) (:data req))
+                                  recover])))
                (chan/map (fn [data] (err-f data recover)) err))))
 
 (defn chaincat [req f]
@@ -66,8 +66,8 @@
 
 (defn- map->obj [m]
   (reduce (fn [obj [k v]] (aset obj (name k) v) obj)
-            (js-obj)
-            m))
+          (js-obj)
+          m))
 
 (defn request
   "Asynchronously make a network request for the resource at url.  The
@@ -100,17 +100,20 @@
 ; Process Response
 
 (defn ->json [req]
-  (chain* req
-          (fn [body err]
-            (try
-              (js->clj (.parse js/JSON body))
-              (catch js/Error e
-                (put! err e))))
-          (fn [err recover]
-            (if (string? err)
-              (try
-                (js->clj (.parse js/JSON err))
-                (catch js/Error e
-                  e))
-              err))))
-
+  (letfn [(str? [s]
+            (and (string? s) (not= s "")))]
+    (chain* req
+      (fn [body err]
+        (if (str? body)
+          (try
+            (js->clj (.parse js/JSON body))
+            (catch js/Error e
+              (put! err e)))
+          true))
+      (fn [err recover]
+        (if (str? err)
+          (try
+            (js->clj (.parse js/JSON err))
+            (catch js/Error e
+              e))
+          err)))))

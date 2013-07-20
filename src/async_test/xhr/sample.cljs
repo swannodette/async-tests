@@ -8,7 +8,7 @@
              :refer [event-chan by-id set-html set-class]]))
 
 (defn row-data [row]
-  (let [bill (get row "bill")]
+  (when-let [bill (get row "bill")]
     (str "<tr><td>" (get bill "bill_number") "</td>"
          "<td>" (get bill "title") "</td></tr>")))
 
@@ -17,16 +17,18 @@
 
 (defn show-page [clicks pages]
   (go
-    (let [page (<! pages)
-          rows (for [row page]
-                 (row-data row))
-          html (apply str rows)]
-      (when (> 9 (count rows))
-        (set-class (by-id "more") "hidden"))
-      (when (seq rows)
-        (set-html (by-id "bills") html)
-        (<! clicks)
-        (show-page clicks pages)))))
+    (loop []
+      (let [page (<! pages)
+            rows (for [row page] (row-data row))
+            rows (remove nil? rows)
+            html (apply str rows)]
+        (when (seq rows)
+          (set-html (by-id "bills") html))
+        (if (> 9 (count rows))
+          (set-class (by-id "more") "hidden")
+          (do
+            (<! clicks)
+            (recur)))))))
 
 (defn init-page []
   (let [button (by-id "more")
@@ -37,9 +39,10 @@
       (<! clicks)
       (set-html button "Next 9 Rows")
       (let [req (xhr/->json (xhr/request "/xhr.json" {}))]
-        (xhr/error! req (fn [e]
-                          (set-html table (str "<tr><td>Request Error:" e "</td></tr>"))
-                          (init-page)))
+        (xhr/on-error! req (fn [e]
+                             (.log js/console "error! " e)
+                             (set-html table (str "<tr><td>Request Error:" e "</td></tr>"))
+                             (init-page)))
         (show-page clicks (pages req))))))
 
 (init-page)
