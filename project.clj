@@ -9,7 +9,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1913"]
                  [org.clojure/core.match "0.2.0"]
-                 [core.async "0.1.242.0-44b1e3-alpha"]]
+                 [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]]
 
   :plugins [[lein-cljsbuild "0.3.3"]]
 
@@ -56,20 +56,6 @@
                 :pretty-print false
                 :static-fns true
                 :output-to "robpike.js"}}
-    {:id "autocomplete"
-     :source-paths ["src/async_test/autocomplete"
-                    "src/async_test/utils"]
-     :compiler {:optimizations :whitespace
-                :pretty-print false
-                :static-fns true
-                :output-to "autocomplete.js"}}
-    {:id "binding"
-     :source-paths ["src/async_test/binding"
-                    "src/async_test/utils"]
-     :compiler {:optimizations :whitespace
-                :pretty-print false
-                :static-fns true
-                :output-to "binding.js"}}
     {:id "timers"
      :source-paths ["src/async_test/timers"
                     "src/async_test/utils"]

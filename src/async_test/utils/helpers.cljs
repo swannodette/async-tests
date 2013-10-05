@@ -41,7 +41,7 @@
 
 (defn by-id [id] (dom/getElement id))
 
-(defn set-html [el s]
+(defn set-html! [el s]
   (aset el "innerHTML" s))
 
 (defn to-char [code]
