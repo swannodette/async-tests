@@ -7,14 +7,11 @@
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-1845-RC1"]
-                 [org.clojure/core.match "0.2.0-rc2"]
-                 [core.async "0.1.0-SNAPSHOT"]]
-  
-  :repositories {"sonatype-staging"
-                 "https://oss.sonatype.org/content/groups/staging/"}
+                 [org.clojure/clojurescript "0.0-1913"]
+                 [org.clojure/core.match "0.2.0"]
+                 [core.async "0.1.242.0-44b1e3-alpha"]]
 
-  :plugins [[lein-cljsbuild "0.3.2"]]
+  :plugins [[lein-cljsbuild "0.3.3"]]
 
   :cljsbuild
   {:builds

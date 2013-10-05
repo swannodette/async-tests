@@ -12,8 +12,6 @@
                     (let [right (chan)]
                       (f left right)
                       (recur (dec n) right))))]
-  (go
-    (let [s (js/Date.)]
-      (>! rightmost 1)
-      (.log js/console (<! leftmost) " elapsed ms: "
-        (- (.valueOf (js/Date.)) (.valueOf s))))))
+  (go (time (do
+    (>! rightmost 1)
+    (.log js/console (<! leftmost))))))
