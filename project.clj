@@ -62,4 +62,12 @@
      :compiler {:optimizations :whitespace
                 :pretty-print false
                 :static-fns true
-                :output-to "timers.js"}}]})
+                :output-to "timers.js"}}
+    {:id "xhr"
+     :source-paths ["src/async_test/xhr"
+                    "src/async_test/utils"]
+     :compiler {:optimizations :whitespace
+                :pretty-print true
+                :static-fns true
+                :output-to "xhr.js"}}
+     ]})
